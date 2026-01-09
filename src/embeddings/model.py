@@ -1,3 +1,4 @@
+from functools import lru_cache
 from sentence_transformers import SentenceTransformer
 import os
 
@@ -15,6 +16,7 @@ device = os.getenv("DEVICE", "cpu")
 
 model: SentenceTransformer | None = None
 
+@lru_cache
 def get_model() -> SentenceTransformer:
     global model
     if model is None:
