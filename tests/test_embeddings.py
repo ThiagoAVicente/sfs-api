@@ -29,3 +29,8 @@ class TestEmbeddings(TestCase):
         embedding = EmbeddingGenerator.embed([text])
         dif = EmbeddingGenerator.embed(["This is another test"])
         assert not np.allclose(embedding, dif)
+
+    def test_empty_list_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            EmbeddingGenerator.embed([])
+        assert "Input list is empty" in str(context.exception)

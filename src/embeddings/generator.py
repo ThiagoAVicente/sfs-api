@@ -1,10 +1,7 @@
 from .model import get_model
 import numpy as np
 
-
 class EmbeddingGenerator:
-
-    model = get_model()
 
     @staticmethod
     def embed(texts: list[str]) -> np.ndarray:
@@ -22,4 +19,5 @@ class EmbeddingGenerator:
             raise ValueError("Input list is empty")
 
         # embed text
-        return EmbeddingGenerator.model.encode(texts)
+        model = get_model()
+        return model.encode(texts)

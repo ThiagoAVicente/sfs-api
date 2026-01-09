@@ -4,14 +4,18 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.13"
 dependencies = [
-    "bandit>=1.9.2",
     "fastapi>=0.128.0",
     "numpy>=2.4.0",
-    "pytest>=9.0.2",
     "qdrant-client>=1.16.2",
-    "safety>=3.7.0",
     "sentence-transformers>=5.2.0",
     "uvicorn>=0.40.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.2",
+    "safety>=3.7.0",
+    "bandit>=1.9.2",
 ]
 
 [tool.pytest.ini_options]

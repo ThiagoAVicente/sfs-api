@@ -24,14 +24,10 @@ jobs:
       run: uv python install 3.13
 
     - name: Install dependencies
-      run: uv sync
+      run: uv sync --extra dev
 
     - name: Run safety check
-      run: |
-        uv pip install safety
-        uv run safety check --json || true
+      run: uv run safety check --json
 
     - name: Run bandit security linter
-      run: |
-        uv pip install bandit
-        uv run bandit -r src/ -f json || true
+      run: uv run bandit -r src/ -f json

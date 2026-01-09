@@ -1245,27 +1245,32 @@ name = "semantic-file-search"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "bandit" },
     { name = "fastapi" },
     { name = "numpy" },
-    { name = "pytest" },
     { name = "qdrant-client" },
-    { name = "safety" },
     { name = "sentence-transformers" },
     { name = "uvicorn" },
 ]
 
+[package.optional-dependencies]
+dev = [
+    { name = "bandit" },
+    { name = "pytest" },
+    { name = "safety" },
+]
+
 [package.metadata]
 requires-dist = [
-    { name = "bandit", specifier = ">=1.9.2" },
+    { name = "bandit", marker = "extra == 'dev'", specifier = ">=1.9.2" },
     { name = "fastapi", specifier = ">=0.128.0" },
     { name = "numpy", specifier = ">=2.4.0" },
-    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.2" },
     { name = "qdrant-client", specifier = ">=1.16.2" },
-    { name = "safety", specifier = ">=3.7.0" },
+    { name = "safety", marker = "extra == 'dev'", specifier = ">=3.7.0" },
     { name = "sentence-transformers", specifier = ">=5.2.0" },
     { name = "uvicorn", specifier = ">=0.40.0" },
 ]
+provides-extras = ["dev"]
 
 [[package]]
 name = "sentence-transformers"
