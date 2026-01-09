@@ -1,2 +1,2 @@
-from .model import model
-from .generator import embed
+from .model import get_model
+from .generator import EmbeddingGenerator
