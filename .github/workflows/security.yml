@@ -26,6 +26,7 @@ jobs:
     - name: Install security tools
       run: |
         export PATH="$HOME/.local/bin:$PATH"
+        uv venv
         uv pip install safety bandit
 
     - name: Run safety check
