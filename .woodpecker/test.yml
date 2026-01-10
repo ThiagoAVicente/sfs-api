@@ -8,5 +8,6 @@ steps:
     commands:
       - curl -LsSf https://astral.sh/uv/install.sh | sh
       - export PATH="/root/.local/bin:$PATH"
-      - uv sync --extra dev
+      - uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - uv sync --extra dev --no-install-project
       - uv run pytest -v
