@@ -3,15 +3,10 @@ when:
   branch: [main]
 
 steps:
-  - name: install-dependencies
+  - name: test
     image: python:3.13
     commands:
       - curl -LsSf https://astral.sh/uv/install.sh | sh
       - export PATH="/root/.local/bin:$PATH"
       - uv sync --extra dev
-
-  - name: run-tests
-    image: python:3.13
-    commands:
-      - export PATH="/root/.local/bin:$PATH"
       - uv run pytest -v
