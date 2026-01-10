@@ -5,8 +5,13 @@ when:
 steps:
   - name: test
     image: python:3.13
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     commands:
+      - apt-get update && apt-get install -y docker.io
       - curl -LsSf https://astral.sh/uv/install.sh | sh
       - export PATH="/root/.local/bin:$PATH"
-      - uv sync --extra dev
+      - uv venv
+      - uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - uv sync --extra dev --no-install-project
       - uv run pytest -v

@@ -8,6 +8,6 @@ steps:
     commands:
       - curl -LsSf https://astral.sh/uv/install.sh | sh
       - export PATH="/root/.local/bin:$PATH"
-      - uv sync --extra dev
+      - uv pip install safety bandit
       - uv run safety check --json
       - uv run bandit -r src/ -f json
