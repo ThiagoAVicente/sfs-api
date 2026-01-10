@@ -22,7 +22,7 @@ class TestQdrantClientMocked:
     @pytest.fixture(autouse=True)
     def reset_client(self):
         """Reset singleton before each test."""
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
         QdrantClient._client = None
         yield
         QdrantClient._client = None
@@ -30,9 +30,9 @@ class TestQdrantClientMocked:
     @pytest.mark.asyncio
     async def test_init_creates_client(self):
         """Test that init creates AsyncQdrantClient."""
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
 
-        with patch('src.vector_store.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
             mock_instance = AsyncMock()
             mock_client_class.return_value = mock_instance
 
@@ -44,9 +44,9 @@ class TestQdrantClientMocked:
     @pytest.mark.asyncio
     async def test_get_returns_same_client(self):
         """Test that get() returns singleton instance."""
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
 
-        with patch('src.vector_store.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
             mock_instance = AsyncMock()
             mock_client_class.return_value = mock_instance
 
@@ -60,9 +60,9 @@ class TestQdrantClientMocked:
     @pytest.mark.asyncio
     async def test_close_clears_client(self):
         """Test that close() clears the singleton."""
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
 
-        with patch('src.vector_store.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
             mock_instance = AsyncMock()
             mock_client_class.return_value = mock_instance
 
@@ -76,9 +76,9 @@ class TestQdrantClientMocked:
     @pytest.mark.asyncio
     async def test_ensure_collection_exists_creates_new(self):
         """Test creating a new collection."""
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
 
-        with patch('src.vector_store.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
 
@@ -98,9 +98,9 @@ class TestQdrantClientMocked:
     @pytest.mark.asyncio
     async def test_ensure_collection_exists_skips_existing(self):
         """Test that existing collection is not recreated."""
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
 
-        with patch('src.vector_store.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
 
@@ -120,9 +120,9 @@ class TestQdrantClientMocked:
     @pytest.mark.asyncio
     async def test_write_generates_point_id(self):
         """Test that write generates ID when not provided."""
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
 
-        with patch('src.vector_store.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
 
@@ -141,10 +141,10 @@ class TestQdrantClientMocked:
     @pytest.mark.asyncio
     async def test_write_generates_deterministic_id(self):
         """Test that write generates deterministic ID from metadata."""
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
         import hashlib
 
-        with patch('src.vector_store.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
 
@@ -169,9 +169,9 @@ class TestQdrantClientMocked:
     @pytest.mark.asyncio
     async def test_write_converts_numpy_to_list(self):
         """Test that numpy array is converted to list."""
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
 
-        with patch('src.vector_store.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
 
@@ -193,9 +193,9 @@ class TestQdrantClientMocked:
     @pytest.mark.asyncio
     async def test_search_returns_results(self):
         """Test that search returns similar vectors."""
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
 
-        with patch('src.vector_store.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
 
@@ -224,9 +224,9 @@ class TestQdrantClientMocked:
     @pytest.mark.asyncio
     async def test_search_with_score_threshold(self):
         """Test search with score threshold filter."""
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
 
-        with patch('src.vector_store.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
 
@@ -277,7 +277,7 @@ class TestQdrantClientIntegration:
     async def setup_client(self, qdrant_container):
         """Setup client with testcontainer."""
         import os
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
 
         # Reset singleton
         QdrantClient._client = None
@@ -291,7 +291,7 @@ class TestQdrantClientIntegration:
 
         # Reload module to pick up new env vars
         import importlib
-        import src.vector_store.qdrant_client as qc_module
+        import src.clients.qdrant_client as qc_module
         importlib.reload(qc_module)
 
         yield
@@ -303,7 +303,7 @@ class TestQdrantClientIntegration:
     @pytest.mark.asyncio
     async def test_real_connection(self):
         """Test real connection to Qdrant."""
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
 
         client = await QdrantClient.get()
         assert client is not None
@@ -311,7 +311,7 @@ class TestQdrantClientIntegration:
     @pytest.mark.asyncio
     async def test_real_create_collection(self):
         """Test creating real collection."""
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
 
         result = await QdrantClient.ensure_collection_exists(
             collection_name="test_real_collection",
@@ -330,7 +330,7 @@ class TestQdrantClientIntegration:
     @pytest.mark.asyncio
     async def test_real_write_and_retrieve(self):
         """Test writing and retrieving real vectors."""
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
 
         collection_name = "test_write_collection"
 
@@ -376,7 +376,7 @@ class TestQdrantClientIntegration:
     @pytest.mark.asyncio
     async def test_real_multiple_writes(self):
         """Test writing multiple vectors."""
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
 
         collection_name = "test_multi_write"
 
@@ -404,7 +404,7 @@ class TestQdrantClientIntegration:
     @pytest.mark.asyncio
     async def test_real_search_functionality(self):
         """Test real search with similar vectors."""
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
 
         collection_name = "test_search_collection"
 
@@ -445,7 +445,7 @@ class TestQdrantClientIntegration:
     @pytest.mark.asyncio
     async def test_real_search_with_threshold(self):
         """Test search with score threshold."""
-        from src.vector_store import QdrantClient
+        from src.clients import QdrantClient
 
         collection_name = "test_threshold_collection"
 

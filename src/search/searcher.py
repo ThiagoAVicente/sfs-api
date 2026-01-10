@@ -1,5 +1,5 @@
 from src.embeddings import EmbeddingGenerator
-from src.vector_store import QdrantClient
+from src.clients import QdrantClient
 
 
 class Searcher:

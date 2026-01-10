@@ -22,7 +22,7 @@ def qdrant_container():
 async def setup(qdrant_container):
     """Setup client with testcontainer."""
     import os
-    from src.vector_store import QdrantClient
+    from src.clients import QdrantClient
 
     QdrantClient._client = None
 
@@ -33,7 +33,7 @@ async def setup(qdrant_container):
     os.environ["QDRANT_PORT"] = str(port)
 
     import importlib
-    import src.vector_store.qdrant_client as qc_module
+    import src.clients.qdrant_client as qc_module
     importlib.reload(qc_module)
 
     yield
@@ -47,7 +47,7 @@ async def setup(qdrant_container):
 async def test_search_end_to_end():
     """Test full search flow."""
     from src.search.searcher import Searcher
-    from src.vector_store import QdrantClient
+    from src.clients import QdrantClient
     from src.embeddings import EmbeddingGenerator
 
     collection_name = "test_collection"
@@ -90,7 +90,7 @@ async def test_search_end_to_end():
 async def test_search_with_threshold():
     """Test search filters by score threshold."""
     from src.search.searcher import Searcher
-    from src.vector_store import QdrantClient
+    from src.clients import QdrantClient
     from src.embeddings import EmbeddingGenerator
 
     collection_name = "test_threshold"
@@ -130,7 +130,7 @@ async def test_search_with_threshold():
 async def test_search_clips_invalid_params():
     """Test that invalid params are clipped to valid ranges."""
     from src.search.searcher import Searcher
-    from src.vector_store import QdrantClient
+    from src.clients import QdrantClient
     from src.embeddings import EmbeddingGenerator
 
     collection_name = "test_params"
