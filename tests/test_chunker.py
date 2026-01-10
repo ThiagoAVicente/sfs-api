@@ -1,22 +1,22 @@
 import unittest
 import os
-from src.indexer.chunker import chunk_text, _find_char
+from src.indexer import Chunker
 
 
 class TestFindChar(unittest.TestCase):
     def test_find_char_finds_last_occurrence(self):
         text = "Hello\nWorld\nTest"
-        result = _find_char(text, '\n', 0, 15)
+        result = Chunker._find_char(text, '\n', 0, 15)
         assert result == 11
 
     def test_find_char_returns_none_when_not_found(self):
         text = "Hello World"
-        result = _find_char(text, '\n', 0, 11)
+        result = Chunker._find_char(text, '\n', 0, 11)
         assert result is None
 
     def test_find_char_respects_boundaries(self):
         text = "Hello\nWorld\nTest"
-        result = _find_char(text, '\n', 0, 10)
+        result = Chunker._find_char(text, '\n', 0, 10)
         assert result == 5
 
 
@@ -34,7 +34,7 @@ class TestChunkText(unittest.TestCase):
             os.environ["OVERLAP"] = self.original_overlap
 
     def test_empty_text_returns_empty_list(self):
-        result = chunk_text("")
+        result = Chunker.chunk_text("")
         assert result == []
 
     def test_chunk_size_validation(self):
@@ -48,7 +48,7 @@ class TestChunkText(unittest.TestCase):
             chunker.chunk_size = 50
             chunker.overlap = 100
             try:
-                chunk_text("test")
+                Chunker.chunk_text("test")
             finally:
                 chunker.chunk_size = old_size
                 chunker.overlap = old_overlap
@@ -57,7 +57,7 @@ class TestChunkText(unittest.TestCase):
 
     def test_text_smaller_than_chunk_returns_single_chunk(self):
         text = "Small text"
-        chunks = chunk_text(text)
+        chunks = Chunker.chunk_text(text)
 
         assert len(chunks) == 1
         assert chunks[0]["text"] == text
@@ -66,7 +66,7 @@ class TestChunkText(unittest.TestCase):
 
     def test_chunks_have_correct_metadata(self):
         text = "A" * 2000  # 2000 chars
-        chunks = chunk_text(text)
+        chunks = Chunker.chunk_text(text)
 
         for chunk in chunks:
             assert "text" in chunk
@@ -77,7 +77,7 @@ class TestChunkText(unittest.TestCase):
 
     def test_chunks_overlap(self):
         text = "A" * 2000
-        chunks = chunk_text(text)
+        chunks = Chunker.chunk_text(text)
 
         if len(chunks) >= 2:
             # Check that chunks overlap
@@ -90,7 +90,7 @@ class TestChunkText(unittest.TestCase):
     def test_breaks_at_newline(self):
         # Create text with newline near chunk boundary
         text = "A" * 900 + "\n" + "B" * 500
-        chunks = chunk_text(text)
+        chunks = Chunker.chunk_text(text)
 
         # First chunk should end at or near the newline
         first_chunk = chunks[0]["text"]
@@ -99,7 +99,7 @@ class TestChunkText(unittest.TestCase):
 
     def test_breaks_at_period_when_no_newline(self):
         text = "A" * 900 + ". " + "B" * 500
-        chunks = chunk_text(text)
+        chunks = Chunker.chunk_text(text)
 
         first_chunk = chunks[0]["text"]
         # Should try to break at period
@@ -109,7 +109,7 @@ class TestChunkText(unittest.TestCase):
 
     def test_breaks_at_space_when_no_period_or_newline(self):
         text = "A" * 900 + " " + "B" * 500
-        chunks = chunk_text(text)
+        chunks = Chunker.chunk_text(text)
 
         first_chunk = chunks[0]["text"]
         # Should avoid cutting mid-word
@@ -125,7 +125,7 @@ class TestChunkText(unittest.TestCase):
 def validate_credentials(user, pwd):
     return check_database(user, pwd)
 """
-        chunks = chunk_text(code)
+        chunks = Chunker.chunk_text(code)
 
         assert len(chunks) >= 1
         # Verify all chunks have text
@@ -134,7 +134,7 @@ def validate_credentials(user, pwd):
 
     def test_chunk_positions_are_sequential(self):
         text = "A" * 3000
-        chunks = chunk_text(text)
+        chunks = Chunker.chunk_text(text)
 
         for i in range(len(chunks) - 1):
             current_end = chunks[i]["end"]
@@ -147,7 +147,7 @@ def validate_credentials(user, pwd):
 
     def test_chunk_text_matches_positions(self):
         text = "Hello World\nThis is a test\nAnother line"
-        chunks = chunk_text(text)
+        chunks = Chunker.chunk_text(text)
 
         for chunk in chunks:
             extracted = text[chunk["start"]:chunk["end"]]

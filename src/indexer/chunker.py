@@ -3,72 +3,76 @@ import os
 chunk_size = int(os.getenv("CHUNK_SIZE", 1000))
 overlap = int(os.getenv("OVERLAP", 200))
 
-def _find_char(text:str, char:str, start:int, end:int) -> int|None:
-    """
-    Find last occurrence of char in text within limits
+class Chunker:
 
-    Args:
-        text (str): Text to search
-        char (str): Character to find
-        start (int): Start index
-        end (int): End index
-    Returns:
-        int: Index of last occurrence or None if not found
-    """
+    @staticmethod
+    def _find_char(text:str, char:str, start:int, end:int) -> int|None:
+        """
+        Find last occurrence of char in text within limits
 
-    val = text.rfind(char, start, end)
-    return val if val != -1 else None
+        Args:
+            text (str): Text to search
+            char (str): Character to find
+            start (int): Start index
+            end (int): End index
+        Returns:
+            int: Index of last occurrence or None if not found
+        """
 
-def chunk_text(text: str) -> list[dict[str, str | int]]:
-    """
-    Split text into overlapping chunks with smart boundaries.
+        val = text.rfind(char, start, end)
+        return val if val != -1 else None
 
-    Args:
-        text: Text to chunk
+    @staticmethod
+    def chunk_text(text: str) -> list[dict[str, str | int]]:
+        """
+        Split text into overlapping chunks with smart boundaries.
 
-    Returns:
-        List of dicts with 'text', 'start', 'end' keys
-    """
-    if not text:
-        return []
+        Args:
+            text: Text to chunk
 
-    if chunk_size <= overlap:
-        raise ValueError("chunk_size must be greater than overlap")
+        Returns:
+            List of dicts with 'text', 'start', 'end' keys
+        """
+        if not text:
+            return []
 
-    chunks: list[dict[str, str | int]] = []
-    start: int = 0
-    text_size: int = len(text)
-    increment: int = chunk_size - overlap
-    natural_boundaries:tuple[str,...] = ("\n", ".", " ")
+        if chunk_size <= overlap:
+            raise ValueError("chunk_size must be greater than overlap")
 
-    # declarations for hints
-    boundary:str
-    natural_end:int | None
+        chunks: list[dict[str, str | int]] = []
+        start: int = 0
+        text_size: int = len(text)
+        increment: int = chunk_size - overlap
+        natural_boundaries:tuple[str,...] = ("\n", ".", " ")
 
-    while start < text_size:
-        end: int = min(start + chunk_size, text_size)
+        # declarations for hints
+        boundary:str
+        natural_end:int | None
 
-        # Try to break at natural boundary
-        if end < text_size and end > start:
-            # Look for newline within last 20% of chunk
-            boundary_search_start = max(start, end - int(chunk_size * 0.2))
+        while start < text_size:
+            end: int = min(start + chunk_size, text_size)
 
-            for boundary in natural_boundaries:
-                natural_end = _find_char(text, boundary, boundary_search_start, end)
+            # Try to break at natural boundary
+            if end < text_size and end > start:
+                # Look for newline within last 20% of chunk
+                boundary_search_start = max(start, end - int(chunk_size * 0.2))
 
-                if natural_end is None or natural_end <= start :
-                    continue
+                for boundary in natural_boundaries:
+                    natural_end = Chunker._find_char(text, boundary, boundary_search_start, end)
 
-                # stop at natural boundary instead
-                end = natural_end +1
-                break
+                    if natural_end is None or natural_end <= start :
+                        continue
 
-        chunks.append({
-            "text": text[start:end],
-            "start": start,
-            "end": end
-        })
+                    # stop at natural boundary instead
+                    end = natural_end +1
+                    break
 
-        start += increment
+            chunks.append({
+                "text": text[start:end],
+                "start": start,
+                "end": end
+            })
 
-    return chunks
+            start += increment
+
+        return chunks
