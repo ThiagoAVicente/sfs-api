@@ -52,3 +52,6 @@ markers = [
 dev = [
     "python-multipart>=0.0.21",
 ]
+test = [
+    "requests>=2.32.5",
+]
