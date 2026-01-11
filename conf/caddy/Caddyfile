@@ -1,0 +1,44 @@
+{
+	# Global options
+	admin off
+}
+
+{$DOMAIN:localhost} {
+	reverse_proxy api:8000
+
+	@docs {
+		path /docs /docs/* /redoc /redoc/* /openapi.json
+	}
+	header @docs {
+		# Permissive CSP for API documentation
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net unpkg.com; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net unpkg.com; img-src 'self' data: cdn.jsdelivr.net; font-src 'self' data:"
+		X-Frame-Options "SAMEORIGIN"
+		X-Content-Type-Options "nosniff"
+		-Server
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	@api {
+		not path /docs /docs/* /redoc /redoc/* /openapi.json /
+	}
+	header @api {
+		Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		-Server
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	@production {
+		not host localhost 127.0.0.1
+	}
+	header @production {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+	}
+
+	log {
+		output stdout
+		format console
+		level INFO
+	}
+}

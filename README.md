@@ -25,6 +25,7 @@ Search your files using natural language. Instead of exact keyword matching, thi
 - Object storage via MinIO
 - Redis and arq for caching and background jobs
 - Docker & Docker Compose for infrastructure
+- Caddy for reverse proxy
 
 ## Dependencies
 - Docker
@@ -43,7 +44,7 @@ cp .env.example .env
 python3 -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-3. **Update `.env` file with your API key:**
+3. **Update `.env` file with your API key and change the sections with `CHANGE_ME`:**
 ```bash
 # Edit .env and replace the API_KEY value
 API_KEY=your-generated-key-here
@@ -54,8 +55,8 @@ API_KEY=your-generated-key-here
 docker compose up --build
 ```
 
-The API will be available at `http://localhost:8000`
-The endpoints can be accessed at `http://localhost:8000/docs`
+The API will be available at `https://localhost`
+The endpoints can be accessed at `https://localhost/docs`
 
 **Note:** All endpoints except `/health` and `/` require authentication via the `X-API-Key` header.
 
@@ -63,7 +64,7 @@ The endpoints can be accessed at `http://localhost:8000/docs`
 
 ### Upload a file for indexing
 ```bash
-curl -X POST "http://localhost:8000/index" \
+curl -X POST "https://localhost/index" \
   -H "X-API-Key: your-api-key-here" \
   -F "file=@/path/to/your/file.txt"
 ```
@@ -77,7 +78,7 @@ Response:
 
 ### Check indexing status
 ```bash
-curl "http://localhost:8000/index/status/a1b2c3d4" \
+curl "https://localhost/index/status/a1b2c3d4" \
   -H "X-API-Key: your-api-key-here"
 ```
 
@@ -91,7 +92,7 @@ Response:
 
 ### Search files
 ```bash
-curl -X POST "http://localhost:8000/search" \
+curl -X POST "https://localhost/search" \
   -H "X-API-Key: your-api-key-here" \
   -H "Content-Type: application/json" \
   -d '{"query": "what is machine learning?", "limit": 5}'
@@ -118,20 +119,20 @@ Response:
 
 ### List all files
 ```bash
-curl "http://localhost:8000/files/" \
+curl "https://localhost/files/" \
   -H "X-API-Key: your-api-key-here"
 ```
 
 ### Download a file
 ```bash
-curl "http://localhost:8000/files/example.txt" \
+curl "https://localhost/files/example.txt" \
   -H "X-API-Key: your-api-key-here" \
   -o downloaded.txt
 ```
 
 ### Delete a file
 ```bash
-curl -X DELETE "http://localhost:8000/index/example.txt" \
+curl -X DELETE "https://localhost/index/example.txt" \
   -H "X-API-Key: your-api-key-here"
 ```
 
@@ -155,6 +156,7 @@ Then reinstall torch with CUDA support.
 
 ```
 src/
+├── conf/             # Configs for services
 ├── clients/          # Database and storage clients (Qdrant, Minio, Redis)
 ├── config/           # Configuration and settings
 ├── embeddings/       # Text embedding generation
