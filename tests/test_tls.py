@@ -1,5 +1,3 @@
-"""Integration tests for TLS/HTTPS configuration."""
-
 import pytest
 import requests
 import urllib3
@@ -9,6 +7,9 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 @pytest.mark.integration
+@pytest.mark.skip(
+    reason="Requires docker-compose services running. Start with: docker-compose up -d"
+)
 class TestTLS:
     """Basic TLS integration tests."""
 
