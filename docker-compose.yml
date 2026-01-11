@@ -136,7 +136,8 @@ services:
       - "443:443"
       - "443:443/udp"
     environment:
-      - DOMAIN=${DOMAIN}
+      - DOMAIN=${DOMAIN:-localhost}
+      - TLS_EMAIL=${TLS_EMAIL}
     volumes:
       - ./conf/caddy:/etc/caddy
       - ./data/caddy_data:/data
@@ -145,10 +146,6 @@ services:
       - sfs-network
     depends_on:
       - api
-
-volumes:
-  caddy_data:
-  caddy_config:
 
 configs:
   qdrant_config:
