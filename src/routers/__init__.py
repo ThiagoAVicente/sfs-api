@@ -26,19 +26,3 @@ router.include_router(
     prefix="/files",
     tags=["files"]
 )
-
-
-@router.get("/")
-async def root():
-    """Root endpoint."""
-    return {
-        "message": "Semantic File Search API",
-        "version": "0.1.0",
-        "docs": "/docs"
-    }
-
-
-@router.get("/health")
-async def health():
-    """Health check endpoint."""
-    return {"status": "healthy"}
