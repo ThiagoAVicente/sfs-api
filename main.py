@@ -18,6 +18,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+# don't start if API_KEY is not set
 API_KEY = os.getenv("API_KEY")
 if not API_KEY:
     raise RuntimeError("API_KEY environment variable must be set")

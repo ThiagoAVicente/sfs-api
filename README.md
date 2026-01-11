@@ -32,19 +32,39 @@ Search your files using natural language. Instead of exact keyword matching, thi
 
 ## How to run
 
+1. **Copy environment file:**
 ```bash
 cp .env.example .env
+```
+
+2. **Generate a secure API key:**
+```bash
+# Generate a random API key (32 characters)
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+3. **Update `.env` file with your API key:**
+```bash
+# Edit .env and replace the API_KEY value
+API_KEY=your-generated-key-here
+```
+
+4. **Start the services:**
+```bash
 docker compose up --build
 ```
 
 The API will be available at `http://localhost:8000`
 The endpoints can be accessed at `http://localhost:8000/docs`
 
+**Note:** All endpoints except `/health` and `/` require authentication via the `X-API-Key` header.
+
 ## Usage Examples
 
 ### Upload a file for indexing
 ```bash
 curl -X POST "http://localhost:8000/index" \
+  -H "X-API-Key: your-api-key-here" \
   -F "file=@/path/to/your/file.txt"
 ```
 
@@ -57,7 +77,8 @@ Response:
 
 ### Check indexing status
 ```bash
-curl "http://localhost:8000/index/status/a1b2c3d4"
+curl "http://localhost:8000/index/status/a1b2c3d4" \
+  -H "X-API-Key: your-api-key-here"
 ```
 
 Response:
@@ -71,6 +92,7 @@ Response:
 ### Search files
 ```bash
 curl -X POST "http://localhost:8000/search" \
+  -H "X-API-Key: your-api-key-here" \
   -H "Content-Type: application/json" \
   -d '{"query": "what is machine learning?", "limit": 5}'
 ```
@@ -96,17 +118,21 @@ Response:
 
 ### List all files
 ```bash
-curl "http://localhost:8000/files/"
+curl "http://localhost:8000/files/" \
+  -H "X-API-Key: your-api-key-here"
 ```
 
 ### Download a file
 ```bash
-curl "http://localhost:8000/files/example.txt" -o downloaded.txt
+curl "http://localhost:8000/files/example.txt" \
+  -H "X-API-Key: your-api-key-here" \
+  -o downloaded.txt
 ```
 
 ### Delete a file
 ```bash
-curl -X DELETE "http://localhost:8000/index/example.txt"
+curl -X DELETE "http://localhost:8000/index/example.txt" \
+  -H "X-API-Key: your-api-key-here"
 ```
 
 ## CPU vs GPU
@@ -142,11 +168,11 @@ src/
 
 ## Missing Features
 
-This project is missing important security features:
+This project is still missing some security features:
 
-- **No authentication** - Anyone can upload, search, and delete files
-- **No encryption** - Files are stored in plain text
-- **No input validation** beyond basic Pydantic models
+- **No TLS/HTTPS** - Currently HTTP only, should use HTTPS in production
+- **No file encryption at rest** - Files are stored in plain text in MinIO
+- **Basic input validation** - Only Pydantic models, no advanced sanitization
 
 ## License
 
