@@ -18,6 +18,9 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+API_KEY = os.getenv("API_KEY")
+if not API_KEY:
+    raise RuntimeError("API_KEY environment variable must be set")
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
