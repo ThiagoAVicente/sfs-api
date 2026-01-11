@@ -1,7 +1,7 @@
 [project]
 name = "semantic-file-search"
 version = "0.1.0"
-description = "Add your description here"
+description = "API to search accross files using the meaning"
 requires-python = ">=3.13"
 dependencies = [
     "arq>=0.26.3",
@@ -11,8 +11,16 @@ dependencies = [
     "qdrant-client>=1.16.2",
     "redis>=5.3.1",
     "sentence-transformers>=5.2.0",
+    "slowapi>=0.1.9",
+    "torch",
     "uvicorn>=0.40.0",
 ]
+
+### remove to use gpu version
+[tool.uv]
+extra-index-url = ["https://download.pytorch.org/whl/cpu"]
+index-strategy = "unsafe-best-match"
+###
 
 [project.optional-dependencies]
 test = [
@@ -38,4 +46,9 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 markers = [
     "integration: marks tests as integration tests (require Docker)",
+]
+
+[dependency-groups]
+dev = [
+    "python-multipart>=0.0.21",
 ]

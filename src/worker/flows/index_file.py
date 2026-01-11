@@ -12,13 +12,12 @@ class IndexFileFlow:
     Flow to add/update embeddings of a file
     """
     @staticmethod
-    async def index_file(ctx, file_path:str, job_id:str) -> dict:
+    async def index_file(ctx, file_path:str) -> dict:
         """
         Index a file
         Args:
             ctx: arq context
             file_path: path to file on minio
-            job_id: job id for tracking
 
         Returns:
             Status dict with results
@@ -32,7 +31,7 @@ class IndexFileFlow:
             # chunk file
             text = file_data.decode('utf-8')
             chunks = Chunker.chunk_text(text)
-            logger.info(f"[{job_id}] Created {len(chunks)} chunks")
+            logger.info(f"Created {len(chunks)} chunks")
 
             # generate embeddings
             chunk_texts = [c['text'] for c in chunks]
@@ -55,9 +54,9 @@ class IndexFileFlow:
                     metadata=metadata
                 )
 
-            logger.info(f"[{job_id}] Indexed {len(chunks)} chunks")
+            logger.info(f"Indexed {len(chunks)} chunks")
             return {"status": "complete", "chunks_indexed": len(chunks)}
 
         except Exception as e:
-            logger.error(f"[{job_id}] Failed: {e}")
+            logger.error(f"Failed: {e}")
             raise

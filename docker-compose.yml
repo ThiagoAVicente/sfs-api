@@ -74,6 +74,74 @@ services:
     networks:
       - sfs-network
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sfs-api
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL=${MODEL}
+      - DEVICE=${DEVICE}
+      - CHUNK_SIZE=${CHUNK_SIZE}
+      - OVERLAP=${OVERLAP}
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - COLLECTION_NAME=${COLLECTION_NAME}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - MINIO_HOST=minio
+      - MINIO_PORT=9000
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - SFS_FILE_BUCKET=${SFS_FILE_BUCKET}
+      - RATE_LIMIT_SEARCH=${RATE_LIMIT_SEARCH}
+      - RATE_LIMIT_UPLOAD=${RATE_LIMIT_UPLOAD}
+      - RATE_LIMIT_DELETE=${RATE_LIMIT_DELETE}
+      - RATE_LIMIT_STATUS=${RATE_LIMIT_STATUS}
+      - RATE_LIMIT_DOWNLOAD=${RATE_LIMIT_DOWNLOAD}
+      - MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB}
+    depends_on:
+      - qdrant
+      - redis
+      - minio
+    networks:
+      - sfs-network
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    #container_name: sfs-worker
+    restart: always
+    environment:
+      - MODEL=${MODEL}
+      - DEVICE=${DEVICE}
+      - CHUNK_SIZE=${CHUNK_SIZE}
+      - OVERLAP=${OVERLAP}
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - COLLECTION_NAME=${COLLECTION_NAME}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - MINIO_HOST=minio
+      - MINIO_PORT=9000
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - SFS_FILE_BUCKET=${SFS_FILE_BUCKET}
+    depends_on:
+      - qdrant
+      - redis
+      - minio
+    networks:
+      - sfs-network
+    deploy:
+      replicas: ${NUM_WORKERS}
+
 
 configs:
   qdrant_config:

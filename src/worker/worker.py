@@ -1,6 +1,8 @@
+import os
 import logging
 from arq import run_worker
 from arq.typing import WorkerSettingsBase
+from arq.connections import RedisSettings
 from src.worker.flows import IndexFileFlow, DeleteFileFlow
 
 logger = logging.getLogger(__name__)
@@ -33,6 +35,12 @@ async def shutdown(ctx):
 
 class WorkerSettings(WorkerSettingsBase):
     """arq worker settings."""
+
+    redis_settings = RedisSettings(
+        host=os.getenv("REDIS_HOST", "localhost"),
+        port=int(os.getenv("REDIS_PORT", "6379")),
+        password=os.getenv("REDIS_PASSWORD"),
+    )
 
     functions = [
         IndexFileFlow.index_file,
