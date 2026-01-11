@@ -1,7 +1,14 @@
 import os
 from qdrant_client import AsyncQdrantClient
-from qdrant_client.models import Distance, VectorParams
-from qdrant_client.models import PointStruct
+from qdrant_client.models import (
+    Distance,
+    VectorParams,
+    PointStruct,
+    FilterSelector,
+    Filter,
+    FieldCondition,
+    MatchValue
+)
 import hashlib
 import numpy as np
 import logging
@@ -122,6 +129,31 @@ class QdrantClient:
 
         logger.info(f"Wrote point {point_id} to '{collection_name}'")
         return True
+
+    @classmethod
+    async def delete_file(
+        cls,
+        collection_name:str,
+        file_path:str
+    ):
+        """
+        Remove all vectors related to a file
+        Args:
+            file_path: Path to file
+        """
+        client = await cls.get()
+        filter:Filter = Filter(
+            must=[
+                FieldCondition(key="file_path", match=MatchValue(value=file_path))
+            ]
+        )
+        points_selector:FilterSelector = FilterSelector(filter=filter)
+
+        await client.delete(
+            collection_name=collection_name,
+            points_selector=points_selector
+        )
+
 
     @classmethod
     async def search(
