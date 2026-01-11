@@ -137,11 +137,16 @@ services:
       - "443:443/udp"
     environment:
       - DOMAIN=${DOMAIN:-localhost}
-      - TLS_EMAIL=${TLS_EMAIL}
     volumes:
       - ./conf/caddy:/etc/caddy
       - ./data/caddy_data:/data
       - ./data/caddy_config:/config
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "https://localhost/health", "--no-check-certificate"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     networks:
       - sfs-network
     depends_on:
