@@ -7,12 +7,9 @@ A local semantic search engine that finds files based on meaning, not just keywo
 Search your files using natural language. Instead of exact keyword matching, this tool understands what you're looking for.
 
 **This is a personal learning project.** I built it to learn about:
-- FastAPI and async Python
-- Vector databases (Qdrant) and embeddings
-- Object storage (Minio)
-- Caching with Redis
-- Docker and docker-compose
-- Background job processing with Redis + arq
+- Vector databases and embeddings
+- Object storage
+- Caching
 
 ## Features
 
@@ -21,7 +18,19 @@ Search your files using natural language. Instead of exact keyword matching, thi
 - Asynchronous processing with background workers
 - Rate limiting on endpoints
 
-## Running with Docker
+## Tech Stack
+
+- Python (FastAPI)
+- Vector search with Qdrant
+- Object storage via MinIO
+- Redis for caching and background jobs
+- Docker & Docker Compose for infrastructure
+
+## Dependencies
+- Docker
+- Docker compose
+
+## How to run
 
 ```bash
 cp .env.example .env
