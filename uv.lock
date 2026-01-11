@@ -1391,6 +1391,9 @@ test = [
 dev = [
     { name = "python-multipart" },
 ]
+test = [
+    { name = "requests" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -1419,6 +1422,7 @@ provides-extras = ["test", "security", "dev"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "python-multipart", specifier = ">=0.0.21" }]
+test = [{ name = "requests", specifier = ">=2.32.5" }]
 
 [[package]]
 name = "sentence-transformers"
