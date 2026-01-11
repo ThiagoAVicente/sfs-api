@@ -143,6 +143,28 @@ services:
     deploy:
       replicas: ${NUM_WORKERS}
 
+  caddy:
+    image: caddy:2.11-alpine
+    container_name: sfs-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      - DOMAIN=${DOMAIN}
+    volumes:
+      - ./conf/caddy:/etc/caddy
+      - ./data/caddy_data:/data
+      - ./data/caddy_config:/config
+    networks:
+      - sfs-network
+    depends_on:
+      - api
+
+volumes:
+  caddy_data:
+  caddy_config:
 
 configs:
   qdrant_config:

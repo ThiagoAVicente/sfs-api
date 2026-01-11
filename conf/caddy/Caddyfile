@@ -1,0 +1,23 @@
+{
+	# Global options
+	admin off
+	auto_https disable_redirects
+}
+
+{$DOMAIN:localhost} {
+	reverse_proxy api:8000
+
+	header {
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		X-XSS-Protection "1; mode=block"
+		-Server
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	log {
+		output stdout
+		format console
+		level INFO
+	}
+}
