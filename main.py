@@ -1,12 +1,13 @@
 """Main FastAPI application entry point."""
 
 import logging
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from src.routers import router, limiter
+from src.utils.security import verify_api_key
 import os
 
 # Configure logging
@@ -82,10 +83,24 @@ app.add_middleware(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+
+@app.get("/")
+async def root():
+    """Root endpoint."""
+    return {
+        "message": "Semantic File Search API",
+        "version": "0.1.0",
+        "docs": "/docs"
+    }
+
+@app.get("/health")
+async def health():
+    """Health check endpoint."""
+    return {"status": "healthy"}
+
+
 # Include routers
-app.include_router(router)
-
-
+app.include_router(router, dependencies=[Depends(verify_api_key)])
 
 if __name__ == "__main__":
     import uvicorn
