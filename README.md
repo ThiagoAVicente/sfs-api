@@ -20,10 +20,10 @@ Search your files using natural language. Instead of exact keyword matching, thi
 
 ## Tech Stack
 
-- Python (FastAPI)
+- Python 
 - Vector search with Qdrant
 - Object storage via MinIO
-- Redis for caching and background jobs
+- Redis and arq for caching and background jobs
 - Docker & Docker Compose for infrastructure
 
 ## Dependencies
