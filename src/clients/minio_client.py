@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 from minio import Minio
 from minio.error import S3Error
+from minio.sseconfig import Rule, SSEConfig
 
 
 @dataclass
@@ -66,6 +67,8 @@ class MinIOClient:
         try:
             if not client.bucket_exists(bucket):
                 client.make_bucket(bucket)
+                sse_config = SSEConfig(Rule.new_sse_s3_rule())
+                client.set_bucket_encryption(bucket, sse_config)
             return True
         except S3Error as e:
             print(f"Error ensuring bucket exists: {e}")
