@@ -11,6 +11,7 @@ def minio_container():
     container.with_exposed_ports(9000)
     container.with_env("MINIO_ROOT_USER", "minioadmin")
     container.with_env("MINIO_ROOT_PASSWORD", "minioadmin")
+    container.with_env("MINIO_KMS_SECRET_KEY", "minio-kms:1B09jU7vbNS4qTPpnfaddRPtfStSS2tjnPWvMvDq/xc=")
     container.with_command("server /data")
 
     container.start()
