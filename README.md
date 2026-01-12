@@ -2,6 +2,28 @@
 
 A local semantic search engine that finds files based on meaning, not just keywords.
 
+---
+
+## Table of contents
+
+- [What is this?](#what-is-this)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Dependencies](#dependencies)
+- [How to run](#how-to-run)
+  - [Automated setup](#automated-setup)
+  - [Manual setup](#manual-setup)
+- [Usage Examples](#usage-examples)
+  - [Upload a file for indexing](#upload-a-file-for-indexing)
+  - [Check indexing status](#check-indexing-status)
+  - [Search files](#search-files)
+  - [List all files](#list-all-files)
+  - [Download a file](#download-a-file)
+  - [Delete a file](#delete-a-file)
+- [CPU vs GPU](#cpu-vs-gpu)
+- [Project Structure](#project-structure)
+- [License](#license)
+
 ## What is this?
 
 Search your files using natural language. Instead of exact keyword matching, this tool understands what you're looking for.
@@ -33,6 +55,15 @@ Search your files using natural language. Instead of exact keyword matching, thi
 
 ## How to run
 
+### Automated setup 
+
+```bash
+# this will generate all needed information and start the services
+./install.sh
+```
+
+### Manual setup 
+
 1. **Copy environment file:**
 ```bash
 cp .env.example .env
@@ -41,16 +72,25 @@ cp .env.example .env
 2. **Generate a secure API key:**
 ```bash
 # Generate a random API key (32 characters)
-python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+openssl rand -base64 32 | tr '+/' '-_' | tr -d '='
 ```
 
-3. **Update `.env` file with your API key and change the sections with `CHANGE_ME`:**
+3. **Generate MinIO encryption key (for encryption at rest):**
 ```bash
-# Edit .env and replace the API_KEY value
-API_KEY=your-generated-key-here
+# Generate a 32-byte key and base64 encode it
+openssl rand -base64 32
 ```
 
-4. **Start the services:**
+4. **Update `.env` file with your API key, MinIO KMS key, and change the sections with `CHANGE_ME`:**
+```bash
+# Edit .env and replace:
+API_KEY=your-generated-api-key
+MINIO_ROOT_USER=your-secure-user
+MINIO_ROOT_PASSWORD=your-secure-password
+MINIO_KMS_SECRET_KEY=minio-kms:YOUR_BASE64_KEY_HERE
+```
+
+5. **Start the services:**
 ```bash
 docker compose up --build
 ```
@@ -167,14 +207,6 @@ src/
 ├── utils/            # Utility functions
 └── worker/           # Background job processing (arq)
 ```
-
-## Missing Features
-
-This project is still missing some security features:
-
-- **No TLS/HTTPS** - Currently HTTP only, should use HTTPS in production
-- **No file encryption at rest** - Files are stored in plain text in MinIO
-- **Basic input validation** - Only Pydantic models, no advanced sanitization
 
 ## License
 
