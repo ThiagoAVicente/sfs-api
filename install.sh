@@ -15,6 +15,27 @@ echo -e "${BLUE}Semantic File Search API - Setup${NC}"
 echo "===================================="
 echo ""
 
+# Check dependencies
+echo -e "${GREEN}Checking dependencies...${NC}"
+
+if ! command -v openssl &> /dev/null; then
+    echo -e "${RED}Error: openssl is not installed${NC}"
+    exit 1
+fi
+
+if ! command -v docker &> /dev/null; then
+    echo -e "${RED}Error: docker is not installed${NC}"
+    exit 1
+fi
+
+if ! docker compose version &> /dev/null; then
+    echo -e "${RED}Error: docker compose is not available${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN} All dependencies found${NC}"
+echo ""
+
 
 # Copy .env.example to .env
 echo -e "${GREEN}1. Creating .env file...${NC}"
@@ -60,7 +81,7 @@ sed -i "s/^REDIS_PASSWORD=.*/REDIS_PASSWORD=$REDIS_PASS/" .env
 
 # Set secure permissions on .env                                                                                                        │
 echo -e "${GREEN}6. Setting secure permissions...${NC}"                                                                                 │
-sudo chmod 600 .env
+chmod 600 .env
 
 echo ""
 echo -e "${GREEN}====================================${NC}"
@@ -72,6 +93,7 @@ docker compose up --build -d
 
 if [ $? -ne 0 ]; then
     echo -e "${RED}Error: Docker compose build failed!${NC}"
+    exit 1
 fi
 echo ""
 echo -e "${YELLOW}Generated credentials saved to .env${NC}"
