@@ -23,8 +23,9 @@ API_KEY = os.getenv("API_KEY")
 if not API_KEY:
     raise RuntimeError("API_KEY environment variable must be set")
 
+
 @asynccontextmanager
-async def lifespan(app:FastAPI):
+async def lifespan(app: FastAPI):
     """Initialize services on startup."""
     logger.info("Starting Semantic File Search API...")
 
@@ -48,7 +49,6 @@ async def lifespan(app:FastAPI):
 
     yield
 
-
     """Cleanup on shutdown."""
     logger.info("Shutting down Semantic File Search API...")
 
@@ -69,7 +69,10 @@ app = FastAPI(
     title="Semantic File Search API",
     description="Semantic search for files using embeddings",
     version="0.1.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None
 )
 
 COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "sfs-files")
@@ -96,6 +99,7 @@ async def root():
         "version": "0.1.0",
         "docs": "/docs"
     }
+
 
 @app.get("/health")
 async def health():
