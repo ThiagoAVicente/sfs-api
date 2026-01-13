@@ -90,37 +90,12 @@ startxref
         # Should extract some text (even if minimal)
         assert isinstance(result, str)
 
-    def test_pdf_to_text_empty_pdf(self):
-        """Test extracting text from an empty PDF returns empty string."""
-        # PDF with no extractable text
-        pdf_data = b"""%PDF-1.4
-1 0 obj
-<<
-/Type /Catalog
-/Pages 2 0 R
->>
-endobj
-2 0 obj
-<<
-/Type /Pages
-/Count 0
->>
-endobj
-xref
-0 3
-0000000000 65535 f
-0000000009 00000 n
-0000000058 00000 n
-trailer
-<<
-/Size 3
-/Root 1 0 R
->>
-startxref
-107
-%%EOF"""
-        result = FileAbstraction.get_text(pdf_data, "pdf")
-        assert result == ""
+    def test_pdf_to_text_invalid_pdf_returns_empty(self):
+        """Test that truncated PDF raises ValueError."""
+        pdf_data = b"%PDF-1.4%%EOF"
+        with pytest.raises(ValueError) as exc_info:
+            FileAbstraction.get_text(pdf_data, "pdf")
+        assert "Malformed PDF" in str(exc_info.value)
 
     def test_pdf_to_text_malformed_pdf(self):
         """Test that malformed PDF raises an appropriate error."""

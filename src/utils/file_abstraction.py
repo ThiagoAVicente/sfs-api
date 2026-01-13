@@ -2,8 +2,12 @@ from pypdf import PdfReader
 from pypdf.errors import PdfReadError, PyPdfError
 from io import BytesIO
 import logging
+import os
 
 logger = logging.getLogger(__name__)
+
+_pdf_max_pages = os.environ.get('PDF_MAX_PAGES', 500)
+PDF_MAX_PAGES = int(_pdf_max_pages)
 
 class FileAbstraction:
     @staticmethod
@@ -38,14 +42,21 @@ class FileAbstraction:
         """
         try:
             reader = PdfReader(BytesIO(file_data))
-        except (PdfReadError, PyPdfError) as e:
+            if len(reader.pages) > PDF_MAX_PAGES:
+                logger.warning(f"PDF has more than {PDF_MAX_PAGES} pages")
+                raise ValueError(f"PDF has more than {PDF_MAX_PAGES} pages")
+        except (PdfReadError, PyPdfError,KeyError) as e:
             logger.error(f"Failed to read PDF: {e}")
             raise ValueError(f"Malformed PDF file: {e}") from e
+        except ValueError as e:
+            logger.error(f"ValueError occurred: {e}")
+            raise e
         except Exception as e:
             logger.error(f"Unexpected error reading PDF: {e}")
             raise ValueError(f"Error reading PDF: {e}") from e
 
         text_parts: list[str] = []
+
 
         for page in reader.pages:
             try:
