@@ -7,7 +7,6 @@ from src.worker.flows import IndexFileFlow, DeleteFileFlow
 
 logger = logging.getLogger(__name__)
 
-
 async def startup(ctx):
     """Initialize worker on startup."""
     logging.basicConfig(
@@ -42,9 +41,12 @@ class WorkerSettings(WorkerSettingsBase):
         password=os.getenv("REDIS_PASSWORD"),
     )
 
+    index_file = IndexFileFlow.index_file
+    delete_file = DeleteFileFlow.delete_file
+
     functions = [
-        IndexFileFlow.index_file,
-        DeleteFileFlow.delete_file
+        index_file,
+        delete_file
     ]
 
     on_startup = startup

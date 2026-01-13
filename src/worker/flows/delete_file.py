@@ -10,7 +10,7 @@ class DeleteFileFlow:
     """Flow to delete a file from vector store and MinIO."""
 
     @staticmethod
-    async def delete_file(ctx, file_path: str) -> dict:
+    async def delete_file(ctx, file_path: str, *args, **kwargs) -> dict:
         """
         Delete a file from MinIO and its vectors from Qdrant.
 

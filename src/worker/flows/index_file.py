@@ -1,8 +1,10 @@
 from src.indexer import Chunker
 from src.embeddings import EmbeddingGenerator
 from src.clients import QdrantClient, MinIOClient
+from src.utils import FileAbstraction
 import logging
 import os
+import re
 
 logger = logging.getLogger(__name__)
 COLLECTION_NAME = os.environ.get('COLLECTION_NAME', 'default')
@@ -12,7 +14,7 @@ class IndexFileFlow:
     Flow to add/update embeddings of a file
     """
     @staticmethod
-    async def index_file(ctx, file_path:str) -> dict:
+    async def index_file(ctx, file_path:str, file_type:str, *args, **kwargs) -> dict:
         """
         Index a file
         Args:
@@ -29,7 +31,9 @@ class IndexFileFlow:
                 raise Exception(f"Failed to download {file_path}")
 
             # chunk file
-            text = file_data.decode('utf-8')
+            text = FileAbstraction.get_text(file_data, file_type)
+            text = re.sub(r"\s+", " ", text).strip()
+
             chunks = Chunker.chunk_text(text)
             logger.info(f"Created {len(chunks)} chunks")
 

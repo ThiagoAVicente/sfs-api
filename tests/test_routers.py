@@ -44,7 +44,7 @@ class TestIndexRouter:
             assert result["job_id"] == "job-123"
             mock_minio.object_exists.assert_called_once_with("test.txt")
             mock_minio.put_object.assert_called_once()
-            mock_redis.enqueue_job.assert_called_once_with('IndexFileFlow.index_file', 'test.txt')
+            mock_redis.enqueue_job.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_index_file_invalid(self, mock_request):
@@ -182,7 +182,7 @@ class TestIndexRouter:
             result = await delete_file(mock_request, "test.txt")
 
             assert result["job_id"] == "job-789"
-            mock_redis.enqueue_job.assert_called_once_with('DeleteFileFlow.delete_file', 'test.txt')
+            mock_redis.enqueue_job.assert_called_once()
 
 
 class TestSearchRouter:

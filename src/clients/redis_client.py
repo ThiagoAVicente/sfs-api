@@ -5,6 +5,7 @@ import logging
 from arq import create_pool, ArqRedis
 from arq.jobs import Job
 from arq.connections import RedisSettings
+from src.models import JobRequest
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,7 @@ class RedisClient:
         return cls._pool
 
     @classmethod
-    async def enqueue_job(cls, function_name: str, file_path: str) -> str:
+    async def enqueue_job(cls, job_request: JobRequest) -> str:
         """
         Enqueue a job to be processed by the worker.
 
@@ -59,7 +60,9 @@ class RedisClient:
             The job ID
         """
         pool = await cls.get()
-        job = await pool.enqueue_job(function_name, file_path=file_path)
+        job = await pool.enqueue_job(job_request.function_name,
+                                    file_path=job_request.file_path,
+                                    file_type=job_request.file_type)
         if job is None:
             raise ValueError(f"Failed to enqueue job for '{file_path}'")
 
