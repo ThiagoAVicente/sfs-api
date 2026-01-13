@@ -1,5 +1,9 @@
 from pypdf import PdfReader
+from pypdf.errors import PdfReadError, PyPdfError
 from io import BytesIO
+import logging
+
+logger = logging.getLogger(__name__)
 
 class FileAbstraction:
     @staticmethod
@@ -29,14 +33,27 @@ class FileAbstraction:
             file_data (bytes): The PDF file data.
         Returns:
             str: The extracted text from the PDF.
+        Raises:
+            ValueError: If the PDF is malformed or cannot be read.
         """
-        reader = PdfReader(BytesIO(file_data))
+        try:
+            reader = PdfReader(BytesIO(file_data))
+        except (PdfReadError, PyPdfError) as e:
+            logger.error(f"Failed to read PDF: {e}")
+            raise ValueError(f"Malformed PDF file: {e}") from e
+        except Exception as e:
+            logger.error(f"Unexpected error reading PDF: {e}")
+            raise ValueError(f"Error reading PDF: {e}") from e
+
         text_parts: list[str] = []
 
         for page in reader.pages:
-            page_text = page.extract_text()
-
-            if page_text:
-                text_parts.append(page_text)
+            try:
+                page_text = page.extract_text()
+                if page_text:
+                    text_parts.append(page_text)
+            except Exception as e:
+                logger.warning(f"Failed to extract text from PDF page: {e}")
+                continue
 
         return "\n".join(text_parts)

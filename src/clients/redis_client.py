@@ -53,8 +53,7 @@ class RedisClient:
         Enqueue a job to be processed by the worker.
 
         Args:
-            function_name: Name of the worker function to run
-            file_path: Path to the file in MinIO
+            job_request: The job request to enqueue
 
         Returns:
             The job ID

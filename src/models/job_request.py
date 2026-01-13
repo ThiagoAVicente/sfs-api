@@ -1,6 +1,7 @@
-class JobRequest:
+from dataclasses import dataclass
 
-    def __init__(self, function: str, file_path: str, file_type:str|None=None):
-        self.function = function
-        self.file_path = file_path
-        self.file_type = file_type
+@dataclass
+class JobRequest:
+    function: str
+    file_path: str
+    file_type: str | None = None
