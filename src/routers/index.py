@@ -6,6 +6,7 @@ from src.models import StatusResponse
 from src.utils import required
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from src.utils.support import FileType
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -51,6 +52,13 @@ async def index_file(
                 detail=f"File too large. Maximum size is {MAX_FILE_SIZE_MB}MB, got {file_size_mb:.2f}MB"
             )
 
+        file_support_response = FileType.is_supported(content)
+        if not file_support_response[0]:
+            raise HTTPException(
+                status_code=415,
+                detail=f"Rejected file [{file_support_response[1]}]"
+            )
+
         # check if file exists on minio
         if MinIOClient.object_exists(file_name):
             if not update:
@@ -73,6 +81,10 @@ async def index_file(
         job_id = await RedisClient.enqueue_job('IndexFileFlow.index_file', file_name)
 
         return {"job_id": job_id}
+
+    except HTTPException as exc:
+        logger.error(f"Error indexing file: {exc}")
+        raise exc
 
     except Exception as e:
         logger.error(f"Error indexing file: {e}")

@@ -47,6 +47,35 @@ class TestIndexRouter:
             mock_redis.enqueue_job.assert_called_once_with('IndexFileFlow.index_file', 'test.txt')
 
     @pytest.mark.asyncio
+    async def test_index_file_invalid(self, mock_request):
+        """Test successful file upload and indexing."""
+        from src.routers.index import index_file
+        from fastapi import HTTPException
+
+        # Mock file upload
+        mock_file = MagicMock()
+        mock_file.filename = "test.txt"
+        mock_file.content_type = "text/plain"
+        mock_file.read = AsyncMock(return_value=b"")
+
+        with patch('src.routers.index.MinIOClient') as mock_minio, \
+                patch('src.routers.index.RedisClient') as mock_redis, \
+                patch('src.routers.index.required'):
+
+            # Mock MinIO operations
+            mock_minio.object_exists.return_value = False
+            mock_minio.put_object.return_value = True
+
+            # Mock Redis enqueue
+            mock_redis.enqueue_job = AsyncMock(return_value="job-123")
+
+            with pytest.raises(HTTPException) as exc_info:
+                await index_file(mock_request, mock_file, update=False)
+
+            assert exc_info.value.status_code == 415
+            assert "empty" in exc_info.value.detail
+
+    @pytest.mark.asyncio
     async def test_index_file_already_exists_no_update(self, mock_request):
         """Test file upload fails when file exists and update=False."""
         from src.routers.index import index_file
@@ -65,7 +94,7 @@ class TestIndexRouter:
                 await index_file(mock_request, mock_file, update=False)
 
             # Router catches HTTPException and re-raises as 500
-            assert exc_info.value.status_code == 500
+            assert exc_info.value.status_code == 400
             assert "already exists" in exc_info.value.detail
 
     @pytest.mark.asyncio

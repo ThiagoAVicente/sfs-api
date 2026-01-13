@@ -25,7 +25,7 @@ class FileType:
             return False, NS
 
         if not decoded.strip():
-            return False, "Empty file"
+            return False, "empty file"
 
         if not decoded or not any(c.isprintable() and not c.isspace() for c in decoded):
             return False, NS
