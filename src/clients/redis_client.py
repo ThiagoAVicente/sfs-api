@@ -5,6 +5,7 @@ import logging
 from arq import create_pool, ArqRedis
 from arq.jobs import Job
 from arq.connections import RedisSettings
+from src.models import JobRequest
 
 logger = logging.getLogger(__name__)
 
@@ -47,23 +48,24 @@ class RedisClient:
         return cls._pool
 
     @classmethod
-    async def enqueue_job(cls, function_name: str, file_path: str) -> str:
+    async def enqueue_job(cls, job_request: JobRequest) -> str:
         """
         Enqueue a job to be processed by the worker.
 
         Args:
-            function_name: Name of the worker function to run
-            file_path: Path to the file in MinIO
+            job_request: The job request to enqueue
 
         Returns:
             The job ID
         """
         pool = await cls.get()
-        job = await pool.enqueue_job(function_name, file_path=file_path)
+        job = await pool.enqueue_job(job_request.function,
+                                    file_path=job_request.file_path,
+                                    file_type=job_request.file_type)
         if job is None:
-            raise ValueError(f"Failed to enqueue job for '{file_path}'")
+            raise ValueError(f"Failed to enqueue job for '{job_request.file_path}'")
 
-        logger.info(f"Enqueued job {job.job_id} for '{file_path}'")
+        logger.info(f"Enqueued job {job.job_id} for '{job_request.file_path}'")
         return job.job_id
 
     @classmethod

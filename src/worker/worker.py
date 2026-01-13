@@ -3,10 +3,9 @@ import logging
 from arq import run_worker
 from arq.typing import WorkerSettingsBase
 from arq.connections import RedisSettings
-from src.worker.flows import IndexFileFlow, DeleteFileFlow
+from src.worker.flows import index_file, delete_file
 
 logger = logging.getLogger(__name__)
-
 
 async def startup(ctx):
     """Initialize worker on startup."""
@@ -41,10 +40,9 @@ class WorkerSettings(WorkerSettingsBase):
         port=int(os.getenv("REDIS_PORT", "6379")),
         password=os.getenv("REDIS_PASSWORD"),
     )
-
     functions = [
-        IndexFileFlow.index_file,
-        DeleteFileFlow.delete_file
+        index_file,
+        delete_file
     ]
 
     on_startup = startup
