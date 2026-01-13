@@ -64,15 +64,21 @@ async def lifespan(app: FastAPI):
 
     logger.info("API shutdown complete")
 
+DISABLE_DOCS = os.getenv("DISABLE_DOCS", "false").lower() == "true"
+
+docs_url = None if DISABLE_DOCS else "/docs"
+redoc_url = None if DISABLE_DOCS else "/redoc"
+openapi_url = None if DISABLE_DOCS else "/openapi.json"
+
 # Create FastAPI app
 app = FastAPI(
     title="Semantic File Search API",
     description="Semantic search for files using embeddings",
     version="0.1.0",
     lifespan=lifespan,
-    docs_url=None,
-    redoc_url=None,
-    openapi_url=None
+    docs_url=docs_url,
+    redoc_url=redoc_url,
+    openapi_url=openapi_url
 )
 
 COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "sfs-files")
