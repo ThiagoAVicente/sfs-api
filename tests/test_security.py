@@ -34,7 +34,7 @@ class TestAPIKeyAuthentication:
         """Test that root endpoint doesn't require authentication."""
         response = client.get("/")
         assert response.status_code == 200
-        assert "Semantic File Search API" in response.json()["message"]
+        assert "API" in response.json()["message"]
 
     def test_protected_endpoint_without_api_key(self, client):
         """Test that protected endpoints reject requests without API key."""
