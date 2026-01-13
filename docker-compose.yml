@@ -8,6 +8,11 @@ services:
         target: /qdrant/config/production.yaml
     volumes:
       - ./data/qdrant:/qdrant/storage
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
 
     networks:
       - sfs-network
@@ -25,6 +30,12 @@ services:
 
     networks:
       - sfs-network
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
 
   minio:
     image: minio/minio
@@ -44,6 +55,12 @@ services:
     volumes:
       - ./data/minio:/data
 
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
   createbucket:
     image: minio/mc
     container_name: sfs-createbucket
@@ -59,6 +76,12 @@ services:
       "
     networks:
       - sfs-network
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
 
   api:
     build:
@@ -96,6 +119,12 @@ services:
     networks:
       - sfs-network
 
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
   worker:
     build:
       context: .
@@ -127,6 +156,12 @@ services:
     deploy:
       replicas: ${NUM_WORKERS}
 
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
   caddy:
     image: caddy:2.11-alpine
     container_name: sfs-caddy
@@ -151,6 +186,12 @@ services:
       - sfs-network
     depends_on:
       - api
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
 
 configs:
   qdrant_config:
