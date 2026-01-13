@@ -80,6 +80,9 @@ app = FastAPI(
     redoc_url=redoc_url,
     openapi_url=openapi_url
 )
+@app.get("/")
+async def root():
+    return {"message": "Welcome to the API!"}
 
 COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "sfs-files")
 
