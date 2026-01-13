@@ -79,8 +79,8 @@ async def index_file(
         logger.info(f"Uploaded file '{file.filename}'")
 
         # Enqueue indexing job
-        request = JobRequest(function='index_file', file_name=file_name, file_type=file_type)
-        job_id = await RedisClient.enqueue_job(request)
+        jreq = JobRequest(function='index_file', file_path=file_name, file_type=file_type)
+        job_id = await RedisClient.enqueue_job(jreq)
 
         return {"job_id": job_id}
 
@@ -133,8 +133,8 @@ async def delete_file(request: Request, file_name: str):
         job id
     """
     try:
-        request = JobRequest(function='delete_file', file_name=file_name)
-        job_id = await RedisClient.enqueue_job(request)
+        jreq = JobRequest(function='delete_file', file_path=file_name)
+        job_id = await RedisClient.enqueue_job(jreq)
         return {"job_id": job_id}
 
     except Exception as e:

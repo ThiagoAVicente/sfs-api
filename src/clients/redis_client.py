@@ -60,13 +60,13 @@ class RedisClient:
             The job ID
         """
         pool = await cls.get()
-        job = await pool.enqueue_job(job_request.function_name,
+        job = await pool.enqueue_job(job_request.function,
                                     file_path=job_request.file_path,
                                     file_type=job_request.file_type)
         if job is None:
-            raise ValueError(f"Failed to enqueue job for '{file_path}'")
+            raise ValueError(f"Failed to enqueue job for '{job_request.file_path}'")
 
-        logger.info(f"Enqueued job {job.job_id} for '{file_path}'")
+        logger.info(f"Enqueued job {job.job_id} for '{job_request.file_path}'")
         return job.job_id
 
     @classmethod

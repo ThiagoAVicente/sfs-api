@@ -3,7 +3,7 @@ import logging
 from arq import run_worker
 from arq.typing import WorkerSettingsBase
 from arq.connections import RedisSettings
-from src.worker.flows import IndexFileFlow, DeleteFileFlow
+from src.worker.flows import index_file, delete_file
 
 logger = logging.getLogger(__name__)
 
@@ -40,10 +40,6 @@ class WorkerSettings(WorkerSettingsBase):
         port=int(os.getenv("REDIS_PORT", "6379")),
         password=os.getenv("REDIS_PASSWORD"),
     )
-
-    index_file = IndexFileFlow.index_file
-    delete_file = DeleteFileFlow.delete_file
-
     functions = [
         index_file,
         delete_file

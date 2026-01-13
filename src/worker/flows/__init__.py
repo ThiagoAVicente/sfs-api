@@ -1,2 +1,2 @@
-from .index_file import IndexFileFlow
-from .delete_file import DeleteFileFlow
+from .index_file import index_file
+from .delete_file import delete_file
