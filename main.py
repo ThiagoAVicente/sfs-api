@@ -100,16 +100,6 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
-@app.get("/")
-async def root():
-    """Root endpoint."""
-    return {
-        "message": "Semantic File Search API",
-        "version": "0.1.0",
-        "docs": "/docs"
-    }
-
-
 @app.get("/health")
 async def health():
     """Health check endpoint."""

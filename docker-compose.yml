@@ -112,6 +112,7 @@ services:
       - RATE_LIMIT_STATUS=${RATE_LIMIT_STATUS}
       - RATE_LIMIT_DOWNLOAD=${RATE_LIMIT_DOWNLOAD}
       - MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB}
+      - DISABLE_DOCS=${DISABLE_DOCS}
     depends_on:
       - qdrant
       - redis
