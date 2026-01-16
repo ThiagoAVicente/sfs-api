@@ -44,7 +44,7 @@ if [ ! -f .env.example ]; then
     exit 1
 fi
 cp .env.example .env
-
+cp conf/caddy/Caddyfile.example conf/caddy/Caddyfile
 # Ask about domain
 echo ""
 read -p "Do you have a domain? (press Enter for localhost): " USER_DOMAIN
