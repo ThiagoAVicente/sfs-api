@@ -5,6 +5,7 @@ from src.utils import FileAbstraction
 import logging
 import os
 import re
+from .utils import clear_all_cache
 
 logger = logging.getLogger(__name__)
 COLLECTION_NAME = os.environ.get('COLLECTION_NAME', 'default')
@@ -59,3 +60,6 @@ async def index_file(ctx, file_path:str, file_type:str, *args, **kwargs) -> dict
     except Exception as e:
         logger.error(f"Failed: {e}")
         raise
+
+    finally:
+        await clear_all_cache()
