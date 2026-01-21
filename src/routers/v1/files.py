@@ -2,10 +2,11 @@ import logging
 import os
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from src.clients import MinIOClient
+from src.clients import MinIOClient, RedisClient
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from io import BytesIO
+from src.cache import FileCache
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -69,8 +70,18 @@ async def list_files(request: Request, prefix: str = ""):
     Returns:
         List of file names
     """
+
+    redis = await RedisClient.get()
+    file_cache = FileCache(redis)
+
+    # check for hits on cache
+    files = await file_cache.get_files(prefix)
+    if files is not None:
+        return {"files": files, "count": len(files)}
+
     try:
         files = MinIOClient.list_objects(prefix=prefix)
+        await file_cache.cache_files(prefix, files)
         return {"files": files, "count": len(files)}
 
     except Exception as e:

@@ -3,6 +3,8 @@ import os
 from fastapi import APIRouter, HTTPException, Request
 from src.models import SearchRequest, SearchResponse
 from src.search.searcher import Searcher
+from src.cache import QueryCache
+from src.clients import RedisClient
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -35,6 +37,17 @@ async def search_files(
     limit = body.limit
     score_threshold = body.score_threshold
 
+    # check for hits on cache
+    redis = await RedisClient.get()
+    query_cache = QueryCache(redis)
+    results = await query_cache.get_query_results(query, score_threshold, limit)
+    if results is not None:
+        return SearchResponse(
+            query=query,
+            results=results,
+            count=len(results)
+        )
+
     try:
         if not query or query.strip() == "":
             raise HTTPException(status_code=400, detail="Query cannot be empty")
@@ -46,6 +59,7 @@ async def search_files(
             score_threshold=score_threshold
         )
 
+        await query_cache.cache_query_results(query, results, score_threshold, limit)
         return SearchResponse(
             query=query,
             results=results,
