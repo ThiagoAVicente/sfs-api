@@ -57,7 +57,7 @@ class TestAPIKeyAuthentication:
     def test_protected_endpoint_with_valid_api_key(self, client, test_api_key):
         """Test that protected endpoints accept requests with valid API key."""
         with patch('src.utils.security.API_KEY', test_api_key), \
-             patch('src.routers.search.Searcher.search') as mock_search:
+             patch('src.routers.v1.search.Searcher.search') as mock_search:
             mock_search.return_value = []
 
             response = client.post(
@@ -78,9 +78,9 @@ class TestAPIKeyAuthentication:
 
         # With valid API key
         with patch('src.utils.security.API_KEY', test_api_key), \
-             patch('src.routers.index.MinIOClient.object_exists', return_value=False), \
-             patch('src.routers.index.MinIOClient.put_object', return_value=True), \
-             patch('src.routers.index.RedisClient.enqueue_job', return_value="job-123"):
+             patch('src.routers.v1.index.MinIOClient.object_exists', return_value=False), \
+             patch('src.routers.v1.index.MinIOClient.put_object', return_value=True), \
+             patch('src.routers.v1.index.RedisClient.enqueue_job', return_value="job-123"):
 
             response = client.post(
                 "/index",
@@ -98,7 +98,7 @@ class TestAPIKeyAuthentication:
 
         # With valid API key
         with patch('src.utils.security.API_KEY', test_api_key), \
-             patch('src.routers.index.RedisClient.enqueue_job', return_value="job-456"):
+             patch('src.routers.v1.index.RedisClient.enqueue_job', return_value="job-456"):
             response = client.delete(
                 "/index/test.txt",
                 headers={"X-API-Key": test_api_key}
@@ -114,8 +114,8 @@ class TestAPIKeyAuthentication:
 
         # With valid API key
         with patch('src.utils.security.API_KEY', test_api_key), \
-             patch('src.routers.files.MinIOClient.object_exists', return_value=True), \
-             patch('src.routers.files.MinIOClient.get_object', return_value=b"file content"):
+             patch('src.routers.v1.files.MinIOClient.object_exists', return_value=True), \
+             patch('src.routers.v1.files.MinIOClient.get_object', return_value=b"file content"):
 
             response = client.get(
                 "/files/test.txt",
