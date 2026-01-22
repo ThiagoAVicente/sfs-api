@@ -113,6 +113,8 @@ services:
       - RATE_LIMIT_DOWNLOAD=${RATE_LIMIT_DOWNLOAD}
       - MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB}
       - DISABLE_DOCS=${DISABLE_DOCS}
+      - QUERY_PAGE_SIZE=${QUERY_PAGE_SIZE}
+      - FILES_PAGE_SIZE=${FILES_PAGE_SIZE}
     depends_on:
       - qdrant
       - redis

@@ -5,12 +5,12 @@ from src.models import SearchRequest, SearchResponse
 from src.search.searcher import Searcher
 from src.cache import QueryCache
 from src.clients import RedisClient
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
+
+# Import shared limiter
+from src.routers import limiter
 
 COLLECTION_NAME = os.environ.get('COLLECTION_NAME', 'default')
 RATE_LIMIT_SEARCH = os.environ.get('RATE_LIMIT_SEARCH', '30')

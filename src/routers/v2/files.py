@@ -4,14 +4,14 @@ from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import StreamingResponse
 from src.clients import MinIOClient, RedisClient
 from src.models.pagination import PaginationParams, PaginatedResponse
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from io import BytesIO
 from src.cache import FileCache
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
+
+# Import shared limiter
+from src.routers import limiter
 
 RATE_LIMIT_DOWNLOAD = os.environ.get('RATE_LIMIT_DOWNLOAD', '10')
 
