@@ -1,6 +1,7 @@
 import logging
 from src.clients import QdrantClient, MinIOClient
 import os
+from .utils import clear_all_cache
 
 logger = logging.getLogger(__name__)
 COLLECTION_NAME = os.environ.get('COLLECTION_NAME', 'default')
@@ -33,3 +34,6 @@ async def delete_file(ctx, file_path: str, *args, **kwargs) -> dict:
     except Exception as e:
         logger.error(f"Failed to delete: {e}")
         raise
+
+    finally:
+        await clear_all_cache()

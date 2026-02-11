@@ -1,28 +1,13 @@
-from .index import router as index_router
-from .search import router as search_router
-from .files import router as files_router
 from fastapi import APIRouter
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-# Rate limiter configuration
+# Shared rate limiter for entire application
 limiter = Limiter(key_func=get_remote_address)
 
-router = APIRouter()
+from .v1 import router as v1_router
+from .v2 import router as v2_router
 
-# Apply rate limits to routers
-router.include_router(
-    index_router,
-    prefix="/index",
-    tags=["indexing"]
-)
-router.include_router(
-    search_router,
-    prefix="/search",
-    tags=["search"]
-)
-router.include_router(
-    files_router,
-    prefix="/files",
-    tags=["files"]
-)
+router = APIRouter()
+router.include_router(v1_router, prefix="/v1")
+router.include_router(v2_router, prefix="/v2")

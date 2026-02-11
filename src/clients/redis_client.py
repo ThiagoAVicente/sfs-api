@@ -36,7 +36,7 @@ class RedisClient:
     async def close(cls):
         """Close Redis pool."""
         if cls._pool is not None:
-            await cls._pool.close()
+            await cls._pool.aclose()
             cls._pool = None
             logger.info("Redis connection closed")
 

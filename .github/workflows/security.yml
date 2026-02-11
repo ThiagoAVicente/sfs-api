@@ -2,9 +2,10 @@ name: Security Check
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main dev ]
   pull_request:
-    branches: [ main ]
+    branches: [ main dev ]    
+    types: [opened, synchronize]
   schedule:
     - cron: '0 9 * * 1'
 

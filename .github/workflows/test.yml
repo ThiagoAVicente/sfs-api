@@ -2,10 +2,10 @@ name: Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main dev ]
   pull_request:
-    branches: [ main ]
-
+    branches: [ main dev ]
+    types: [opened, synchronize]
 jobs:
   test:
     runs-on: ubuntu-latest

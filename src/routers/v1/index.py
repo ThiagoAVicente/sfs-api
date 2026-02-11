@@ -4,13 +4,13 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Request, Form
 from src.clients import RedisClient, MinIOClient
 from src.models import StatusResponse, JobRequest
 from src.utils import required
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from src.utils.support import FileType
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
+
+# Import shared limiter
+from src.routers import limiter
 
 RATE_LIMIT_UPLOAD = os.environ.get('RATE_LIMIT_UPLOAD', '10')
 RATE_LIMIT_DELETE = os.environ.get('RATE_LIMIT_DELETE', '10')
