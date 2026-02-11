@@ -16,7 +16,7 @@ class TestCacheAbs:
         redis.get = AsyncMock()
         redis.setex = AsyncMock()
         redis.delete = AsyncMock()
-        redis.keys = AsyncMock()
+        redis.scan = AsyncMock()
         return redis
 
     @pytest.mark.asyncio
@@ -56,9 +56,7 @@ class TestCacheAbs:
         await cache.set("cache:files:list:abc123", test_data, ttl=1800)
 
         mock_redis.setex.assert_called_once_with(
-            "cache:files:list:abc123",
-            1800,
-            json.dumps(test_data)
+            "cache:files:list:abc123", 1800, json.dumps(test_data)
         )
 
     @pytest.mark.asyncio
@@ -73,9 +71,7 @@ class TestCacheAbs:
 
         # FileCache has DEFAULT_TTL = 3600
         mock_redis.setex.assert_called_once_with(
-            "cache:files:list:test",
-            3600,
-            json.dumps(test_data)
+            "cache:files:list:test", 3600, json.dumps(test_data)
         )
 
     @pytest.mark.asyncio
@@ -95,18 +91,20 @@ class TestCacheAbs:
         from src.cache import FileCache
 
         cache = FileCache(mock_redis)
-        mock_redis.keys.return_value = [
-            "cache:files:list:abc",
-            "cache:files:list:def"
-        ]
+        # Mock scan to return keys in batches (cursor, keys)
+        mock_redis.scan.return_value = (
+            0,
+            ["cache:files:list:abc", "cache:files:list:def"],
+        )
 
         count = await cache.clear("cache:files:list:*")
 
         assert count == 2
-        mock_redis.keys.assert_called_once_with("cache:files:list:*")
+        mock_redis.scan.assert_called_once_with(
+            0, match="cache:files:list:*", count=100
+        )
         mock_redis.delete.assert_called_once_with(
-            "cache:files:list:abc",
-            "cache:files:list:def"
+            "cache:files:list:abc", "cache:files:list:def"
         )
 
     @pytest.mark.asyncio
@@ -115,11 +113,13 @@ class TestCacheAbs:
         from src.cache import FileCache
 
         cache = FileCache(mock_redis)
-        mock_redis.keys.return_value = ["cache:files:list:abc"]
+        mock_redis.scan.return_value = (0, ["cache:files:list:abc"])
 
         await cache.clear()
 
-        mock_redis.keys.assert_called_once_with("cache:files:list:*")
+        mock_redis.scan.assert_called_once_with(
+            0, match="cache:files:list:*", count=100
+        )
 
     @pytest.mark.asyncio
     async def test_get_handles_bytes_response(self, mock_redis):
@@ -128,7 +128,7 @@ class TestCacheAbs:
 
         cache = FileCache(mock_redis)
         test_data = ["file1.txt"]
-        mock_redis.get.return_value = json.dumps(test_data).encode('utf-8')
+        mock_redis.get.return_value = json.dumps(test_data).encode("utf-8")
 
         result = await cache.get("cache:files:list:test")
 
@@ -145,11 +145,11 @@ class TestFileCache:
         redis.get = AsyncMock()
         redis.setex = AsyncMock()
         redis.delete = AsyncMock()
-        redis.keys = AsyncMock()
+        redis.scan = AsyncMock()
         return redis
 
     def test_cache_key_generation(self):
-        """Test that cache keys are generated correctly with MD5 hash."""
+        """Test that cache keys are generated correctly with SHA256 hash."""
         from src.cache import FileCache
 
         cache = FileCache(MagicMock())
@@ -157,12 +157,12 @@ class TestFileCache:
         # Test empty prefix
         key1 = cache.get_cache_key("")
         assert key1.startswith("cache:files:list:")
-        assert len(key1.split(":")[-1]) == 32  # MD5 hash length
+        assert len(key1.split(":")[-1]) == 64  # SHA256 hash length
 
         # Test with prefix
         prefix = "reports/2024"
         key2 = cache.get_cache_key(prefix)
-        expected_hash = hashlib.md5(prefix.encode()).hexdigest()
+        expected_hash = hashlib.sha256(prefix.encode()).hexdigest()
         assert key2 == f"cache:files:list:{expected_hash}"
 
         # Same prefix should generate same key
@@ -204,11 +204,13 @@ class TestFileCache:
         from src.cache import FileCache
 
         cache = FileCache(mock_redis)
-        mock_redis.keys.return_value = ["cache:files:list:abc"]
+        mock_redis.scan.return_value = (0, ["cache:files:list:abc"])
 
         await cache.clear_all()
 
-        mock_redis.keys.assert_called_once_with("cache:files:list:*")
+        mock_redis.scan.assert_called_once_with(
+            0, match="cache:files:list:*", count=100
+        )
 
 
 class TestQueryCache:
@@ -221,7 +223,7 @@ class TestQueryCache:
         redis.get = AsyncMock()
         redis.setex = AsyncMock()
         redis.delete = AsyncMock()
-        redis.keys = AsyncMock()
+        redis.scan = AsyncMock()
         return redis
 
     def test_cache_key_generation(self):
@@ -265,7 +267,7 @@ class TestQueryCache:
         cache = QueryCache(mock_redis)
         test_results = [
             {"score": 0.95, "text": "result 1"},
-            {"score": 0.85, "text": "result 2"}
+            {"score": 0.85, "text": "result 2"},
         ]
         mock_redis.get.return_value = json.dumps(test_results)
 
@@ -308,11 +310,11 @@ class TestQueryCache:
         from src.cache import QueryCache
 
         cache = QueryCache(mock_redis)
-        mock_redis.keys.return_value = ["cache:search:abc", "cache:search:def"]
+        mock_redis.scan.return_value = (0, ["cache:search:abc", "cache:search:def"])
 
         await cache.clear_all()
 
-        mock_redis.keys.assert_called_once_with("cache:search:*")
+        mock_redis.scan.assert_called_once_with(0, match="cache:search:*", count=100)
 
 
 if __name__ == "__main__":

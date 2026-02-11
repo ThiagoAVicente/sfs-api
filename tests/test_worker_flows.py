@@ -12,10 +12,11 @@ class TestCacheInvalidation:
         """Test that clear_all_cache clears query cache."""
         from src.worker.flows.utils import clear_all_cache
 
-        with patch('src.worker.flows.utils.RedisClient') as mock_redis_class, \
-             patch('src.worker.flows.utils.QueryCache') as mock_query_cache_class, \
-             patch('src.worker.flows.utils.FileCache') as mock_file_cache_class:
-
+        with (
+            patch("src.worker.flows.utils.RedisClient") as mock_redis_class,
+            patch("src.worker.flows.utils.QueryCache") as mock_query_cache_class,
+            patch("src.worker.flows.utils.FileCache") as mock_file_cache_class,
+        ):
             # Mock Redis
             mock_redis = MagicMock()
             mock_redis_class.get = AsyncMock(return_value=mock_redis)
@@ -41,10 +42,11 @@ class TestCacheInvalidation:
         """Test that clear_all_cache uses the same Redis instance for both caches."""
         from src.worker.flows.utils import clear_all_cache
 
-        with patch('src.worker.flows.utils.RedisClient') as mock_redis_class, \
-             patch('src.worker.flows.utils.QueryCache') as mock_query_cache_class, \
-             patch('src.worker.flows.utils.FileCache') as mock_file_cache_class:
-
+        with (
+            patch("src.worker.flows.utils.RedisClient") as mock_redis_class,
+            patch("src.worker.flows.utils.QueryCache") as mock_query_cache_class,
+            patch("src.worker.flows.utils.FileCache") as mock_file_cache_class,
+        ):
             mock_redis = MagicMock()
             mock_redis_class.get = AsyncMock(return_value=mock_redis)
 
@@ -73,13 +75,14 @@ class TestIndexFileFlow:
         file_type = "text/plain"
         file_content = b"This is test content for chunking and embedding."
 
-        with patch('src.worker.flows.index_file.MinIOClient') as mock_minio, \
-             patch('src.worker.flows.index_file.FileAbstraction') as mock_file_abs, \
-             patch('src.worker.flows.index_file.Chunker') as mock_chunker, \
-             patch('src.worker.flows.index_file.EmbeddingGenerator') as mock_embed, \
-             patch('src.worker.flows.index_file.QdrantClient') as mock_qdrant, \
-             patch('src.worker.flows.index_file.clear_all_cache') as mock_clear_cache:
-
+        with (
+            patch("src.worker.flows.index_file.MinIOClient") as mock_minio,
+            patch("src.worker.flows.index_file.FileAbstraction") as mock_file_abs,
+            patch("src.worker.flows.index_file.Chunker") as mock_chunker,
+            patch("src.worker.flows.index_file.EmbeddingGenerator") as mock_embed,
+            patch("src.worker.flows.index_file.QdrantClient") as mock_qdrant,
+            patch("src.worker.flows.index_file.clear_all_cache") as mock_clear_cache,
+        ):
             # Mock MinIO
             mock_minio.get_object.return_value = file_content
 
@@ -89,15 +92,14 @@ class TestIndexFileFlow:
             # Mock chunker
             mock_chunks = [
                 {"text": "This is test", "start": 0, "end": 12},
-                {"text": "test content", "start": 8, "end": 20}
+                {"text": "test content", "start": 8, "end": 20},
             ]
             mock_chunker.chunk_text.return_value = mock_chunks
 
             # Mock embeddings
-            mock_embed.embed_async = AsyncMock(return_value=[
-                [0.1, 0.2, 0.3],
-                [0.4, 0.5, 0.6]
-            ])
+            mock_embed.embed_async = AsyncMock(
+                return_value=[[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
+            )
 
             # Mock Qdrant
             mock_qdrant.write = AsyncMock()
@@ -124,9 +126,10 @@ class TestIndexFileFlow:
         file_path = "test.txt"
         file_type = "text/plain"
 
-        with patch('src.worker.flows.index_file.MinIOClient') as mock_minio, \
-             patch('src.worker.flows.index_file.clear_all_cache') as mock_clear_cache:
-
+        with (
+            patch("src.worker.flows.index_file.MinIOClient") as mock_minio,
+            patch("src.worker.flows.index_file.clear_all_cache") as mock_clear_cache,
+        ):
             # Mock MinIO to fail
             mock_minio.get_object.return_value = None
 
@@ -150,19 +153,20 @@ class TestIndexFileFlow:
         file_path = "test.txt"
         file_type = "text/plain"
 
-        with patch('src.worker.flows.index_file.MinIOClient') as mock_minio, \
-             patch('src.worker.flows.index_file.FileAbstraction') as mock_file_abs, \
-             patch('src.worker.flows.index_file.Chunker') as mock_chunker, \
-             patch('src.worker.flows.index_file.EmbeddingGenerator') as mock_embed, \
-             patch('src.worker.flows.index_file.QdrantClient') as mock_qdrant, \
-             patch('src.worker.flows.index_file.clear_all_cache') as mock_clear_cache:
-
+        with (
+            patch("src.worker.flows.index_file.MinIOClient") as mock_minio,
+            patch("src.worker.flows.index_file.FileAbstraction") as mock_file_abs,
+            patch("src.worker.flows.index_file.Chunker") as mock_chunker,
+            patch("src.worker.flows.index_file.EmbeddingGenerator") as mock_embed,
+            patch("src.worker.flows.index_file.QdrantClient") as mock_qdrant,
+            patch("src.worker.flows.index_file.clear_all_cache") as mock_clear_cache,
+        ):
             mock_minio.get_object.return_value = b"test content"
             mock_file_abs.get_text.return_value = "test content"
 
             mock_chunks = [
                 {"text": "chunk 1", "start": 0, "end": 7},
-                {"text": "chunk 2", "start": 5, "end": 12}
+                {"text": "chunk 2", "start": 5, "end": 12},
             ]
             mock_chunker.chunk_text.return_value = mock_chunks
 
@@ -179,13 +183,13 @@ class TestIndexFileFlow:
 
             # Verify first chunk
             first_call = mock_qdrant.write.call_args_list[0]
-            assert first_call[1]['metadata']['file_path'] == file_path
-            assert first_call[1]['metadata']['text'] == "chunk 1"
-            assert first_call[1]['metadata']['chunk_index'] == 0
+            assert first_call[1]["metadata"]["file_path"] == file_path
+            assert first_call[1]["metadata"]["text"] == "chunk 1"
+            assert first_call[1]["metadata"]["chunk_index"] == 0
 
             # Verify second chunk
             second_call = mock_qdrant.write.call_args_list[1]
-            assert second_call[1]['metadata']['chunk_index'] == 1
+            assert second_call[1]["metadata"]["chunk_index"] == 1
 
 
 class TestDeleteFileFlow:
@@ -199,10 +203,11 @@ class TestDeleteFileFlow:
         mock_ctx = MagicMock()
         file_path = "test.txt"
 
-        with patch('src.worker.flows.delete_file.MinIOClient') as mock_minio, \
-             patch('src.worker.flows.delete_file.QdrantClient') as mock_qdrant, \
-             patch('src.worker.flows.delete_file.clear_all_cache') as mock_clear_cache:
-
+        with (
+            patch("src.worker.flows.delete_file.MinIOClient") as mock_minio,
+            patch("src.worker.flows.delete_file.QdrantClient") as mock_qdrant,
+            patch("src.worker.flows.delete_file.clear_all_cache") as mock_clear_cache,
+        ):
             # Mock deletions
             mock_minio.delete_object = MagicMock()
             mock_qdrant.delete_file = AsyncMock()
@@ -232,9 +237,10 @@ class TestDeleteFileFlow:
         mock_ctx = MagicMock()
         file_path = "test.txt"
 
-        with patch('src.worker.flows.delete_file.MinIOClient') as mock_minio, \
-             patch('src.worker.flows.delete_file.clear_all_cache') as mock_clear_cache:
-
+        with (
+            patch("src.worker.flows.delete_file.MinIOClient") as mock_minio,
+            patch("src.worker.flows.delete_file.clear_all_cache") as mock_clear_cache,
+        ):
             # Mock MinIO to fail
             mock_minio.delete_object.side_effect = Exception("Deletion failed")
 
@@ -257,10 +263,11 @@ class TestDeleteFileFlow:
         mock_ctx = MagicMock()
         file_path = "documents/report.pdf"
 
-        with patch('src.worker.flows.delete_file.MinIOClient') as mock_minio, \
-             patch('src.worker.flows.delete_file.QdrantClient') as mock_qdrant, \
-             patch('src.worker.flows.delete_file.clear_all_cache') as mock_clear_cache:
-
+        with (
+            patch("src.worker.flows.delete_file.MinIOClient") as mock_minio,
+            patch("src.worker.flows.delete_file.QdrantClient") as mock_qdrant,
+            patch("src.worker.flows.delete_file.clear_all_cache") as mock_clear_cache,
+        ):
             mock_minio.delete_object = MagicMock()
             mock_qdrant.delete_file = AsyncMock()
             mock_clear_cache.return_value = AsyncMock()()
@@ -273,8 +280,8 @@ class TestDeleteFileFlow:
 
             # Check Qdrant delete called with correct parameters
             call_kwargs = mock_qdrant.delete_file.call_args[1]
-            assert call_kwargs['file_path'] == file_path
-            assert 'collection_name' in call_kwargs
+            assert call_kwargs["file_path"] == file_path
+            assert "collection_name" in call_kwargs
 
 
 class TestCacheInvalidationIntegration:
@@ -288,21 +295,21 @@ class TestCacheInvalidationIntegration:
 
         # Create mock Redis
         mock_redis = MagicMock()
-        mock_redis.keys = AsyncMock(return_value=[
-            b"cache:search:abc123",
-            b"cache:files:list:def456"
-        ])
+        # Mock scan to return keys (scan returns cursor, keys tuple)
+        mock_redis.scan = AsyncMock(
+            return_value=(0, [b"cache:search:abc123", b"cache:files:list:def456"])
+        )
         mock_redis.delete = AsyncMock()
 
-        with patch('src.worker.flows.utils.RedisClient') as mock_redis_class:
+        with patch("src.worker.flows.utils.RedisClient") as mock_redis_class:
             mock_redis_class.get = AsyncMock(return_value=mock_redis)
 
             # Execute clear
             await clear_all_cache()
 
-            # Verify Redis keys command called for both cache types
-            assert mock_redis.keys.call_count == 2
-            calls = [call[0][0] for call in mock_redis.keys.call_args_list]
+            # Verify Redis scan command called for both cache types
+            assert mock_redis.scan.call_count == 2
+            calls = [call[1]["match"] for call in mock_redis.scan.call_args_list]
             assert "cache:search:*" in calls
             assert "cache:files:list:*" in calls
 
@@ -321,20 +328,23 @@ class TestCacheInvalidationIntegration:
             nonlocal clear_call_count
             clear_call_count += 1
 
-        with patch('src.worker.flows.index_file.MinIOClient') as mock_minio_index, \
-             patch('src.worker.flows.index_file.FileAbstraction') as mock_file_abs, \
-             patch('src.worker.flows.index_file.Chunker') as mock_chunker, \
-             patch('src.worker.flows.index_file.EmbeddingGenerator') as mock_embed, \
-             patch('src.worker.flows.index_file.QdrantClient') as mock_qdrant_index, \
-             patch('src.worker.flows.index_file.clear_all_cache', new=mock_clear), \
-             patch('src.worker.flows.delete_file.MinIOClient') as mock_minio_delete, \
-             patch('src.worker.flows.delete_file.QdrantClient') as mock_qdrant_delete, \
-             patch('src.worker.flows.delete_file.clear_all_cache', new=mock_clear):
-
+        with (
+            patch("src.worker.flows.index_file.MinIOClient") as mock_minio_index,
+            patch("src.worker.flows.index_file.FileAbstraction") as mock_file_abs,
+            patch("src.worker.flows.index_file.Chunker") as mock_chunker,
+            patch("src.worker.flows.index_file.EmbeddingGenerator") as mock_embed,
+            patch("src.worker.flows.index_file.QdrantClient") as mock_qdrant_index,
+            patch("src.worker.flows.index_file.clear_all_cache", new=mock_clear),
+            patch("src.worker.flows.delete_file.MinIOClient") as mock_minio_delete,
+            patch("src.worker.flows.delete_file.QdrantClient") as mock_qdrant_delete,
+            patch("src.worker.flows.delete_file.clear_all_cache", new=mock_clear),
+        ):
             # Setup mocks for index
             mock_minio_index.get_object.return_value = b"test"
             mock_file_abs.get_text.return_value = "test"
-            mock_chunker.chunk_text.return_value = [{"text": "test", "start": 0, "end": 4}]
+            mock_chunker.chunk_text.return_value = [
+                {"text": "test", "start": 0, "end": 4}
+            ]
             mock_embed.embed_async = AsyncMock(return_value=[[0.1]])
             mock_qdrant_index.write = AsyncMock()
 

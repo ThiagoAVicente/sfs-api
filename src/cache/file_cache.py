@@ -23,7 +23,7 @@ class FileCache(CacheAbs):
             Cache key string
         """
         # Hash the prefix to handle special characters and long paths
-        prefix_hash = hashlib.md5(file_prefix.encode()).hexdigest()
+        prefix_hash = hashlib.sha256(file_prefix.encode()).hexdigest()
         return f"{self.prefix}:{prefix_hash}"
 
     async def get_files(self, file_prefix: str = '') -> list[Any]|None:

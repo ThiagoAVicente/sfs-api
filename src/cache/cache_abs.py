@@ -101,7 +101,17 @@ class CacheAbs(ABC):
             if pattern is None:
                 pattern = f"{self.prefix}:*"
 
-            keys = await self.redis.keys(pattern)
+            cursor:int = 0
+            keys:list = []
+
+            while True:
+
+                cursor, batch = await self.redis.scan(cursor, match=pattern, count=100)
+                keys.extend(batch)
+                if cursor == 0:
+                    break
+
+
             if keys:
                 await self.redis.delete(*keys)
                 logger.info(f"Cleared {len(keys)} cache entries matching pattern: {pattern}")
