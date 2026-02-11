@@ -149,7 +149,7 @@ class TestFileCache:
         return redis
 
     def test_cache_key_generation(self):
-        """Test that cache keys are generated correctly with SHA256 hash."""
+        """Test that cache keys are generated correctly with md5 hash."""
         from src.cache import FileCache
 
         cache = FileCache(MagicMock())
@@ -157,12 +157,12 @@ class TestFileCache:
         # Test empty prefix
         key1 = cache.get_cache_key("")
         assert key1.startswith("cache:files:list:")
-        assert len(key1.split(":")[-1]) == 64  # SHA256 hash length
+        assert len(key1.split(":")[-1]) == 32 
 
         # Test with prefix
         prefix = "reports/2024"
         key2 = cache.get_cache_key(prefix)
-        expected_hash = hashlib.sha256(prefix.encode()).hexdigest()
+        expected_hash = hashlib.md5(prefix.encode()).hexdigest()
         assert key2 == f"cache:files:list:{expected_hash}"
 
         # Same prefix should generate same key
