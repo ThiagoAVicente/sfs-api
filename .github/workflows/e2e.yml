@@ -1,0 +1,222 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+    types: [opened, synchronize]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+
+    env:
+      API_KEY: test-api-key-e2e
+      REDIS_PASSWORD: testredis
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_KMS_SECRET_KEY: minio-kms:1B09jU7vbNS4qTPpnfaddRPtfStSS2tjnPWvMvDq/xc=
+      SFS_FILE_BUCKET: default
+      COLLECTION_NAME: default
+      MODEL: sentence-transformers/all-MiniLM-L6-v2
+      DEVICE: cpu
+      CHUNK_SIZE: 256
+      OVERLAP: 32
+      NUM_WORKERS: 1
+      DOMAIN: localhost
+      DISABLE_DOCS: "false"
+      MAX_FILE_SIZE_MB: "50"
+      RATE_LIMIT_SEARCH: "1000"
+      RATE_LIMIT_UPLOAD: "1000"
+      RATE_LIMIT_DELETE: "1000"
+      RATE_LIMIT_STATUS: "1000"
+      RATE_LIMIT_DOWNLOAD: "1000"
+      QUERY_PAGE_SIZE: "20"
+      FILES_PAGE_SIZE: "20"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start stack
+        run: docker compose up -d --build --wait
+        timeout-minutes: 10
+
+      - name: Wait for API to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sk https://localhost/health | grep -q "healthy"; then
+              echo "API is ready"
+              exit 0
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 5
+          done
+          echo "API did not become ready in time"
+          docker compose logs
+          exit 1
+
+      - name: Run E2E tests
+        run: |
+          BASE="https://localhost"
+          KEY="test-api-key-e2e"
+          COL="e2e-test-col"
+          FAIL=0
+
+          check() {
+            local label=$1
+            local expected=$2
+            local actual=$3
+            if [ "$actual" = "$expected" ]; then
+              echo "  PASS $label"
+            else
+              echo "  FAIL $label — expected $expected, got $actual"
+              FAIL=1
+            fi
+          }
+
+          echo ""
+          echo "### No-auth endpoints ###"
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" "$BASE/health")
+          check "GET /health" "200" "$STATUS"
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" "$BASE/")
+          check "GET /" "200" "$STATUS"
+
+          echo ""
+          echo "### Auth enforcement ###"
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -X POST "$BASE/v2/search" \
+            -H "Content-Type: application/json" -d '{"query":"test"}')
+          check "POST /v2/search (no key) → 401" "401" "$STATUS"
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -X POST "$BASE/v2/search" \
+            -H "X-API-Key: wrong-key" -H "Content-Type: application/json" -d '{"query":"test"}')
+          check "POST /v2/search (wrong key) → 401" "401" "$STATUS"
+
+          echo ""
+          echo "### Collections ###"
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" "$BASE/v2/collections")
+          check "GET /v2/collections → 200" "200" "$STATUS"
+
+          echo ""
+          echo "### Index (upload) ###"
+
+          echo "hello world semantic search test" > /tmp/e2e.txt
+
+          RESP=$(curl -sk -H "X-API-Key: $KEY" \
+            -F "file=@/tmp/e2e.txt;type=text/plain" \
+            -F "collection=$COL" \
+            -F "update=false" \
+            "$BASE/v2/index")
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
+            -F "file=@/tmp/e2e.txt;type=text/plain" \
+            -F "collection=$COL" \
+            -F "update=true" \
+            "$BASE/v2/index")
+          check "POST /v2/index → 200" "200" "$STATUS"
+
+          JOB_ID=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('job_id',''))" 2>/dev/null)
+          if [ -z "$JOB_ID" ]; then
+            # first upload succeeded (no duplicate), extract from update response
+            RESP=$(curl -sk -H "X-API-Key: $KEY" \
+              -F "file=@/tmp/e2e.txt;type=text/plain" \
+              -F "collection=$COL" \
+              -F "update=true" \
+              "$BASE/v2/index")
+            JOB_ID=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('job_id',''))")
+          fi
+
+          echo ""
+          echo "### Job status (wait for indexing) ###"
+
+          for i in $(seq 1 20); do
+            JOB_STATUS=$(curl -sk -H "X-API-Key: $KEY" "$BASE/v2/index/status/$JOB_ID" \
+              | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))" 2>/dev/null)
+            if [ "$JOB_STATUS" = "complete" ]; then
+              echo "  Job complete after ${i}s"
+              break
+            fi
+            sleep 2
+          done
+          check "GET /v2/index/status → complete" "complete" "$JOB_STATUS"
+
+          echo ""
+          echo "### Collections (custom should appear) ###"
+
+          COLS=$(curl -sk -H "X-API-Key: $KEY" "$BASE/v2/collections")
+          if echo "$COLS" | grep -q "$COL"; then
+            echo "  PASS GET /v2/collections contains $COL"
+          else
+            echo "  FAIL GET /v2/collections does not contain $COL — got: $COLS"
+            FAIL=1
+          fi
+
+          echo ""
+          echo "### Search ###"
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"hello world","score_threshold":0.3}' \
+            "$BASE/v2/search")
+          check "POST /v2/search (default col) → 200" "200" "$STATUS"
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":\"hello world\",\"score_threshold\":0.3,\"collections\":[\"$COL\"]}" \
+            "$BASE/v2/search")
+          check "POST /v2/search (custom col) → 200" "200" "$STATUS"
+
+          RESULTS=$(curl -sk -H "X-API-Key: $KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":\"hello world\",\"score_threshold\":0.3,\"collections\":[\"$COL\"]}" \
+            "$BASE/v2/search")
+          if echo "$RESULTS" | grep -q "hello world"; then
+            echo "  PASS POST /v2/search returns matching result"
+          else
+            echo "  FAIL POST /v2/search did not return expected result — got: $RESULTS"
+            FAIL=1
+          fi
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":\"hello world\",\"score_threshold\":0.3,\"collections\":[\"$COL\",\"default\"]}" \
+            "$BASE/v2/search")
+          check "POST /v2/search (multi-col) → 200" "200" "$STATUS"
+
+          echo ""
+          echo "### Files ###"
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" "$BASE/v2/files/")
+          check "GET /v2/files/ → 200" "200" "$STATUS"
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" "$BASE/v2/files/?collection=$COL")
+          check "GET /v2/files/?collection=$COL → 200" "200" "$STATUS"
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" "$BASE/v2/files/$COL/e2e.txt")
+          check "GET /v2/files/$COL/e2e.txt → 200" "200" "$STATUS"
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" "$BASE/v2/files/$COL/nonexistent.txt")
+          check "GET /v2/files/$COL/nonexistent.txt → 404" "404" "$STATUS"
+
+          echo ""
+          echo "### Delete ###"
+
+          DEL=$(curl -sk -H "X-API-Key: $KEY" -X DELETE "$BASE/v2/index/$COL/e2e.txt")
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" -X DELETE "$BASE/v2/index/$COL/e2e.txt")
+          check "DELETE /v2/index/$COL/e2e.txt → 200" "200" "$STATUS"
+
+          echo ""
+          echo "### Summary ###"
+          if [ "$FAIL" = "0" ]; then
+            echo "All E2E tests passed!"
+          else
+            echo "Some E2E tests FAILED"
+            exit 1
+          fi
+
+      - name: Print logs on failure
+        if: failure()
+        run: docker compose logs
