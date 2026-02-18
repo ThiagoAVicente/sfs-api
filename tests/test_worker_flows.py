@@ -71,6 +71,7 @@ class TestIndexFileFlow:
         from src.worker.flows.index_file import index_file
 
         mock_ctx = MagicMock()
+        collection = "test-collection"
         file_path = "test.txt"
         file_type = "text/plain"
         file_content = b"This is test content for chunking and embedding."
@@ -103,12 +104,13 @@ class TestIndexFileFlow:
 
             # Mock Qdrant
             mock_qdrant.write = AsyncMock()
+            mock_qdrant.ensure_collection_exists = AsyncMock()
 
             # Mock cache clear
             mock_clear_cache.return_value = AsyncMock()()
 
             # Execute
-            result = await index_file(mock_ctx, file_path, file_type)
+            result = await index_file(mock_ctx, collection, file_path, file_type)
 
             # Assert cache was cleared
             mock_clear_cache.assert_called_once()
@@ -123,6 +125,7 @@ class TestIndexFileFlow:
         from src.worker.flows.index_file import index_file
 
         mock_ctx = MagicMock()
+        collection = "test-collection"
         file_path = "test.txt"
         file_type = "text/plain"
 
@@ -138,7 +141,7 @@ class TestIndexFileFlow:
 
             # Execute and expect failure
             with pytest.raises(Exception) as exc_info:
-                await index_file(mock_ctx, file_path, file_type)
+                await index_file(mock_ctx, collection, file_path, file_type)
 
             # Assert cache was still cleared (finally block)
             mock_clear_cache.assert_called_once()
@@ -150,6 +153,7 @@ class TestIndexFileFlow:
         from src.worker.flows.index_file import index_file
 
         mock_ctx = MagicMock()
+        collection = "test-collection"
         file_path = "test.txt"
         file_type = "text/plain"
 
@@ -174,9 +178,10 @@ class TestIndexFileFlow:
             mock_embed.embed_async = AsyncMock(return_value=mock_embeddings)
 
             mock_qdrant.write = AsyncMock()
+            mock_qdrant.ensure_collection_exists = AsyncMock()
             mock_clear_cache.return_value = AsyncMock()()
 
-            await index_file(mock_ctx, file_path, file_type)
+            await index_file(mock_ctx, collection, file_path, file_type)
 
             # Assert Qdrant write called twice (once per chunk)
             assert mock_qdrant.write.call_count == 2
@@ -201,6 +206,7 @@ class TestDeleteFileFlow:
         from src.worker.flows.delete_file import delete_file
 
         mock_ctx = MagicMock()
+        collection = "test-collection"
         file_path = "test.txt"
 
         with (
@@ -216,7 +222,7 @@ class TestDeleteFileFlow:
             mock_clear_cache.return_value = AsyncMock()()
 
             # Execute
-            result = await delete_file(mock_ctx, file_path)
+            result = await delete_file(mock_ctx, collection, file_path)
 
             # Assert cache was cleared
             mock_clear_cache.assert_called_once()
@@ -226,7 +232,9 @@ class TestDeleteFileFlow:
             assert result["file_path"] == file_path
 
             # Verify deletions called
-            mock_minio.delete_object.assert_called_once_with(file_path)
+            mock_minio.delete_object.assert_called_once_with(
+                f"{collection}/{file_path}"
+            )
             mock_qdrant.delete_file.assert_called_once()
 
     @pytest.mark.asyncio
@@ -235,6 +243,7 @@ class TestDeleteFileFlow:
         from src.worker.flows.delete_file import delete_file
 
         mock_ctx = MagicMock()
+        collection = "test-collection"
         file_path = "test.txt"
 
         with (
@@ -249,7 +258,7 @@ class TestDeleteFileFlow:
 
             # Execute and expect failure
             with pytest.raises(Exception) as exc_info:
-                await delete_file(mock_ctx, file_path)
+                await delete_file(mock_ctx, collection, file_path)
 
             # Assert cache was still cleared (finally block)
             mock_clear_cache.assert_called_once()
@@ -261,7 +270,8 @@ class TestDeleteFileFlow:
         from src.worker.flows.delete_file import delete_file
 
         mock_ctx = MagicMock()
-        file_path = "documents/report.pdf"
+        collection = "documents"
+        file_path = "report.pdf"
 
         with (
             patch("src.worker.flows.delete_file.MinIOClient") as mock_minio,
@@ -272,10 +282,12 @@ class TestDeleteFileFlow:
             mock_qdrant.delete_file = AsyncMock()
             mock_clear_cache.return_value = AsyncMock()()
 
-            await delete_file(mock_ctx, file_path)
+            await delete_file(mock_ctx, collection, file_path)
 
             # Verify both deletions
-            mock_minio.delete_object.assert_called_once_with(file_path)
+            mock_minio.delete_object.assert_called_once_with(
+                f"{collection}/{file_path}"
+            )
             mock_qdrant.delete_file.assert_called_once()
 
             # Check Qdrant delete called with correct parameters
@@ -347,14 +359,16 @@ class TestCacheInvalidationIntegration:
             ]
             mock_embed.embed_async = AsyncMock(return_value=[[0.1]])
             mock_qdrant_index.write = AsyncMock()
+            mock_qdrant_index.ensure_collection_exists = AsyncMock()
 
             # Setup mocks for delete
             mock_minio_delete.delete_object = MagicMock()
             mock_qdrant_delete.delete_file = AsyncMock()
 
             # Execute both operations
-            await index_file(mock_ctx, "test.txt", "text/plain")
-            await delete_file(mock_ctx, "test.txt")
+            collection = "test-collection"
+            await index_file(mock_ctx, collection, "test.txt", "text/plain")
+            await delete_file(mock_ctx, collection, "test.txt")
 
             # Assert cache cleared twice
             assert clear_call_count == 2

@@ -13,17 +13,15 @@ router = APIRouter()
 # Import shared limiter
 from src.routers import limiter
 
-COLLECTION_NAME = os.environ.get('COLLECTION_NAME', 'default')
-RATE_LIMIT_SEARCH = os.environ.get('RATE_LIMIT_SEARCH', '30')
-MAX_SEARCH_LIMIT = int(os.environ.get('MAX_SEARCH_LIMIT', '500'))
+COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "default")
+RATE_LIMIT_SEARCH = os.environ.get("RATE_LIMIT_SEARCH", "30")
+MAX_SEARCH_LIMIT = int(os.environ.get("MAX_SEARCH_LIMIT", "500"))
 
 
 @router.post("", response_model=PaginatedResponse[dict])
 @limiter.limit(f"{RATE_LIMIT_SEARCH}/minute")
 async def search_files(
-    body: SearchRequest,
-    request: Request,
-    pagination: PaginationParams = Depends()
+    body: SearchRequest, request: Request, pagination: PaginationParams = Depends()
 ):
     """
     Search for files by semantic similarity with pagination.
@@ -38,10 +36,15 @@ async def search_files(
     """
     query = body.query
     score_threshold = body.score_threshold
+    collections = body.collections
 
     try:
         if not query or query.strip() == "":
             raise HTTPException(status_code=400, detail="Query cannot be empty")
+
+        # If no collections specified, use default
+        if not collections:
+            collections = [COLLECTION_NAME]
 
         redis = await RedisClient.get()
         query_cache = QueryCache(redis)
@@ -50,26 +53,43 @@ async def search_files(
         cached_results = await query_cache.get_query_results(
             query=query,
             score_threshold=score_threshold,
-            limit=MAX_SEARCH_LIMIT
+            limit=MAX_SEARCH_LIMIT,
+            collections=",".join(
+                sorted(collections)
+            ),  # Include collections in cache key
         )
 
         if cached_results is None:
-            # Cache miss - query Qdrant with max limit
-            cached_results = await Searcher.search(
-                query=query,
-                collection_name=COLLECTION_NAME,
-                limit=MAX_SEARCH_LIMIT,
-                score_threshold=score_threshold
-            )
+            # Cache miss - search across all specified collections
+            all_results = []
+            for collection_name in collections:
+                results = await Searcher.search(
+                    query=query,
+                    collection_name=collection_name,
+                    limit=MAX_SEARCH_LIMIT,
+                    score_threshold=score_threshold,
+                )
+                # Add collection name to each result
+                for result in results:
+                    result["collection"] = collection_name
+                all_results.extend(results)
+
+            # Sort all results by score descending
+            cached_results = sorted(
+                all_results, key=lambda x: x["score"], reverse=True
+            )[:MAX_SEARCH_LIMIT]
 
             # Cache the full result set
             await query_cache.cache_query_results(
                 query=query,
                 results=cached_results,
                 score_threshold=score_threshold,
-                limit=MAX_SEARCH_LIMIT
+                limit=MAX_SEARCH_LIMIT,
+                collections=",".join(sorted(collections)),
             )
-            logger.info(f"Searched and cached {len(cached_results)} results for query: {query[:50]}")
+            logger.info(
+                f"Searched and cached {len(cached_results)} results for query: {query[:50]} across collections: {collections}"
+            )
 
         # Paginate results from cache
         total = len(cached_results)
@@ -81,7 +101,7 @@ async def search_files(
             items=paginated_results,
             total=total,
             page=pagination.page,
-            limit=pagination.limit
+            limit=pagination.limit,
         )
 
     except HTTPException:

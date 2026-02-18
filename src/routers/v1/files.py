@@ -13,7 +13,7 @@ router = APIRouter()
 from src.routers import limiter
 
 RATE_LIMIT_DOWNLOAD = os.environ.get('RATE_LIMIT_DOWNLOAD', '10')
-
+COLLECTION_NAME = os.environ.get('COLLECTION_NAME','default')
 
 @router.get("/{file_name}")
 @limiter.limit(f"{RATE_LIMIT_DOWNLOAD}/minute")
@@ -29,17 +29,20 @@ async def download_file(file_name: str, request: Request):
         File content as streaming response
     """
     try:
+
+        obs_name:str = f"{COLLECTION_NAME}/{file_name}"
+        
         # Check if file exists
-        if not MinIOClient.object_exists(file_name):
+        if not MinIOClient.object_exists(obs_name):
             raise HTTPException(status_code=404, detail="File not found")
 
         # Download from MinIO
-        file_data = MinIOClient.get_object(file_name)
+        file_data = MinIOClient.get_object(obs_name)
 
         if not file_data:
             raise HTTPException(status_code=500, detail="Failed to download file")
 
-        logger.info(f"Downloaded file '{file_name}'")
+        logger.info(f"Downloaded file '{obs_name}'")
 
         # Return as streaming response
         return StreamingResponse(
@@ -71,6 +74,7 @@ async def list_files(request: Request, prefix: str = ""):
         List of file names
     """
 
+    prefix = f"{COLLECTION_NAME}/{prefix}"
     redis = await RedisClient.get()
     file_cache = FileCache(redis)
 
