@@ -1,4 +1,4 @@
-name: E2E Tests
+# name: E2E Tests
 
 on:
   push:
@@ -112,11 +112,25 @@ jobs:
           echo "║        Auth enforcement              ║"
           echo "╚══════════════════════════════════════╝"
 
-          for route in "v1/search" "v1/index" "v2/search" "v2/collections"; do
-            STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: wrong-key" \
+          for route in "v1/search" "v2/search"; do
+            STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -X POST \
+              -H "X-API-Key: wrong-key" \
+              -H "Content-Type: application/json" \
+              -d '{"query":"test"}' \
               "$BASE/$route")
             check "$route (wrong key) → 401" "401" "$STATUS"
           done
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -X POST \
+            -H "X-API-Key: wrong-key" \
+            -F "file=@/tmp/e2e.txt;type=text/plain" \
+            "$BASE/v1/index")
+          check "v1/index (wrong key) → 401" "401" "$STATUS"
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" \
+            -H "X-API-Key: wrong-key" \
+            "$BASE/v2/collections")
+          check "v2/collections (wrong key) → 401" "401" "$STATUS"
 
           # ======================================================
           echo ""
@@ -153,9 +167,9 @@ jobs:
           echo "--- v1 job status ---"
           wait_for_job "v1" "$V1_JOB_ID" "GET /v1/index/status → complete"
 
-          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
-            "$BASE/v1/index/status/nonexistent-job")
-          check "GET /v1/index/status (bad id) → 404" "404" "$STATUS"
+          JOB_STATUS=$(curl -sk -H "X-API-Key: $KEY" "$BASE/v1/index/status/nonexistent-job" \
+            | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))" 2>/dev/null)
+          check "GET /v1/index/status (bad id) → not_found" "not_found" "$JOB_STATUS"
 
           echo ""
           echo "--- v1 search ---"
@@ -245,9 +259,9 @@ jobs:
           echo "--- v2 job status ---"
           wait_for_job "v2" "$V2_JOB_ID" "GET /v2/index/status → complete"
 
-          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
-            "$BASE/v2/index/status/nonexistent-job")
-          check "GET /v2/index/status (bad id) → 404" "404" "$STATUS"
+          JOB_STATUS=$(curl -sk -H "X-API-Key: $KEY" "$BASE/v2/index/status/nonexistent-job" \
+            | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))" 2>/dev/null)
+          check "GET /v2/index/status (bad id) → not_found" "not_found" "$JOB_STATUS"
 
           echo ""
           echo "--- v2 collections (custom should appear) ---"
