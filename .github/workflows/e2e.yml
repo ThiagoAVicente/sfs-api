@@ -75,76 +75,182 @@ jobs:
             fi
           }
 
+          wait_for_job() {
+            local version=$1
+            local job_id=$2
+            local label=$3
+            local job_status=""
+            for i in $(seq 1 20); do
+              job_status=$(curl -sk -H "X-API-Key: $KEY" "$BASE/$version/index/status/$job_id" \
+                | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))" 2>/dev/null)
+              if [ "$job_status" = "complete" ]; then
+                echo "  Job complete after $((i*2))s"
+                break
+              fi
+              sleep 2
+            done
+            check "$label" "complete" "$job_status"
+          }
+
+          echo "hello world semantic search test" > /tmp/e2e.txt
+
+          # ======================================================
           echo ""
-          echo "### No-auth endpoints ###"
+          echo "╔══════════════════════════════════════╗"
+          echo "║        No-auth endpoints             ║"
+          echo "╚══════════════════════════════════════╝"
 
           STATUS=$(curl -sk -o /dev/null -w "%{http_code}" "$BASE/health")
-          check "GET /health" "200" "$STATUS"
+          check "GET /health → 200" "200" "$STATUS"
 
           STATUS=$(curl -sk -o /dev/null -w "%{http_code}" "$BASE/")
-          check "GET /" "200" "$STATUS"
+          check "GET / → 200" "200" "$STATUS"
+
+          # ======================================================
+          echo ""
+          echo "╔══════════════════════════════════════╗"
+          echo "║        Auth enforcement              ║"
+          echo "╚══════════════════════════════════════╝"
+
+          for route in "v1/search" "v1/index" "v2/search" "v2/collections"; do
+            STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: wrong-key" \
+              "$BASE/$route")
+            check "$route (wrong key) → 401" "401" "$STATUS"
+          done
+
+          # ======================================================
+          echo ""
+          echo "╔══════════════════════════════════════╗"
+          echo "║          V1 endpoints                ║"
+          echo "╚══════════════════════════════════════╝"
 
           echo ""
-          echo "### Auth enforcement ###"
+          echo "--- v1 index ---"
 
-          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -X POST "$BASE/v2/search" \
-            -H "Content-Type: application/json" -d '{"query":"test"}')
-          check "POST /v2/search (no key) → 401" "401" "$STATUS"
+          RESP=$(curl -sk -H "X-API-Key: $KEY" \
+            -F "file=@/tmp/e2e.txt;type=text/plain" \
+            -F "update=false" \
+            "$BASE/v1/index")
+          STATUS=$(echo "$RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print('200' if 'job_id' in d else '400')" 2>/dev/null || echo "500")
+          check "POST /v1/index → 200" "200" "$STATUS"
+          V1_JOB_ID=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('job_id',''))" 2>/dev/null)
 
-          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -X POST "$BASE/v2/search" \
-            -H "X-API-Key: wrong-key" -H "Content-Type: application/json" -d '{"query":"test"}')
-          check "POST /v2/search (wrong key) → 401" "401" "$STATUS"
+          # duplicate upload without update flag should 400
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
+            -F "file=@/tmp/e2e.txt;type=text/plain" \
+            -F "update=false" \
+            "$BASE/v1/index")
+          check "POST /v1/index (duplicate, no update) → 400" "400" "$STATUS"
+
+          # update=true should succeed
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
+            -F "file=@/tmp/e2e.txt;type=text/plain" \
+            -F "update=true" \
+            "$BASE/v1/index")
+          check "POST /v1/index (update=true) → 200" "200" "$STATUS"
 
           echo ""
-          echo "### Collections ###"
+          echo "--- v1 job status ---"
+          wait_for_job "v1" "$V1_JOB_ID" "GET /v1/index/status → complete"
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
+            "$BASE/v1/index/status/nonexistent-job")
+          check "GET /v1/index/status (bad id) → 404" "404" "$STATUS"
+
+          echo ""
+          echo "--- v1 search ---"
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"hello world","score_threshold":0.3}' \
+            "$BASE/v1/search")
+          check "POST /v1/search → 200" "200" "$STATUS"
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"","score_threshold":0.3}' \
+            "$BASE/v1/search")
+          check "POST /v1/search (empty query) → 400" "400" "$STATUS"
+
+          RESULTS=$(curl -sk -H "X-API-Key: $KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"hello world","score_threshold":0.3}' \
+            "$BASE/v1/search")
+          if echo "$RESULTS" | grep -q "hello world"; then
+            echo "  PASS POST /v1/search returns matching result"
+          else
+            echo "  FAIL POST /v1/search did not return expected result — got: $RESULTS"
+            FAIL=1
+          fi
+
+          echo ""
+          echo "--- v1 files ---"
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
+            "$BASE/v1/files/e2e.txt")
+          check "GET /v1/files/e2e.txt → 200" "200" "$STATUS"
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
+            "$BASE/v1/files/nonexistent.txt")
+          check "GET /v1/files/nonexistent.txt → 404" "404" "$STATUS"
+
+          echo ""
+          echo "--- v1 delete ---"
+
+          RESP=$(curl -sk -H "X-API-Key: $KEY" -X DELETE "$BASE/v1/index/e2e.txt")
+          STATUS=$(echo "$RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print('200' if 'job_id' in d else '500')" 2>/dev/null || echo "500")
+          check "DELETE /v1/index/e2e.txt → 200" "200" "$STATUS"
+          V1_DEL_JOB=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('job_id',''))" 2>/dev/null)
+          wait_for_job "v1" "$V1_DEL_JOB" "DELETE /v1/index/e2e.txt job → complete"
+
+          # ======================================================
+          echo ""
+          echo "╔══════════════════════════════════════╗"
+          echo "║          V2 endpoints                ║"
+          echo "╚══════════════════════════════════════╝"
+
+          echo ""
+          echo "--- v2 collections ---"
 
           STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" "$BASE/v2/collections")
           check "GET /v2/collections → 200" "200" "$STATUS"
 
           echo ""
-          echo "### Index (upload) ###"
-
-          echo "hello world semantic search test" > /tmp/e2e.txt
+          echo "--- v2 index ---"
 
           RESP=$(curl -sk -H "X-API-Key: $KEY" \
             -F "file=@/tmp/e2e.txt;type=text/plain" \
             -F "collection=$COL" \
             -F "update=false" \
             "$BASE/v2/index")
+          STATUS=$(echo "$RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print('200' if 'job_id' in d else '400')" 2>/dev/null || echo "500")
+          check "POST /v2/index → 200" "200" "$STATUS"
+          V2_JOB_ID=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('job_id',''))" 2>/dev/null)
+
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
+            -F "file=@/tmp/e2e.txt;type=text/plain" \
+            -F "collection=$COL" \
+            -F "update=false" \
+            "$BASE/v2/index")
+          check "POST /v2/index (duplicate, no update) → 400" "400" "$STATUS"
+
           STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
             -F "file=@/tmp/e2e.txt;type=text/plain" \
             -F "collection=$COL" \
             -F "update=true" \
             "$BASE/v2/index")
-          check "POST /v2/index → 200" "200" "$STATUS"
-
-          JOB_ID=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('job_id',''))" 2>/dev/null)
-          if [ -z "$JOB_ID" ]; then
-            # first upload succeeded (no duplicate), extract from update response
-            RESP=$(curl -sk -H "X-API-Key: $KEY" \
-              -F "file=@/tmp/e2e.txt;type=text/plain" \
-              -F "collection=$COL" \
-              -F "update=true" \
-              "$BASE/v2/index")
-            JOB_ID=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('job_id',''))")
-          fi
+          check "POST /v2/index (update=true) → 200" "200" "$STATUS"
 
           echo ""
-          echo "### Job status (wait for indexing) ###"
+          echo "--- v2 job status ---"
+          wait_for_job "v2" "$V2_JOB_ID" "GET /v2/index/status → complete"
 
-          for i in $(seq 1 20); do
-            JOB_STATUS=$(curl -sk -H "X-API-Key: $KEY" "$BASE/v2/index/status/$JOB_ID" \
-              | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))" 2>/dev/null)
-            if [ "$JOB_STATUS" = "complete" ]; then
-              echo "  Job complete after ${i}s"
-              break
-            fi
-            sleep 2
-          done
-          check "GET /v2/index/status → complete" "complete" "$JOB_STATUS"
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
+            "$BASE/v2/index/status/nonexistent-job")
+          check "GET /v2/index/status (bad id) → 404" "404" "$STATUS"
 
           echo ""
-          echo "### Collections (custom should appear) ###"
+          echo "--- v2 collections (custom should appear) ---"
 
           COLS=$(curl -sk -H "X-API-Key: $KEY" "$BASE/v2/collections")
           if echo "$COLS" | grep -q "$COL"; then
@@ -155,7 +261,7 @@ jobs:
           fi
 
           echo ""
-          echo "### Search ###"
+          echo "--- v2 search ---"
 
           STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
             -H "Content-Type: application/json" \
@@ -186,8 +292,14 @@ jobs:
             "$BASE/v2/search")
           check "POST /v2/search (multi-col) → 200" "200" "$STATUS"
 
+          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"","score_threshold":0.3}' \
+            "$BASE/v2/search")
+          check "POST /v2/search (empty query) → 400" "400" "$STATUS"
+
           echo ""
-          echo "### Files ###"
+          echo "--- v2 files ---"
 
           STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" "$BASE/v2/files/")
           check "GET /v2/files/ → 200" "200" "$STATUS"
@@ -202,14 +314,19 @@ jobs:
           check "GET /v2/files/$COL/nonexistent.txt → 404" "404" "$STATUS"
 
           echo ""
-          echo "### Delete ###"
+          echo "--- v2 delete ---"
 
-          DEL=$(curl -sk -H "X-API-Key: $KEY" -X DELETE "$BASE/v2/index/$COL/e2e.txt")
-          STATUS=$(curl -sk -o /dev/null -w "%{http_code}" -H "X-API-Key: $KEY" -X DELETE "$BASE/v2/index/$COL/e2e.txt")
+          RESP=$(curl -sk -H "X-API-Key: $KEY" -X DELETE "$BASE/v2/index/$COL/e2e.txt")
+          STATUS=$(echo "$RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print('200' if 'job_id' in d else '500')" 2>/dev/null || echo "500")
           check "DELETE /v2/index/$COL/e2e.txt → 200" "200" "$STATUS"
+          V2_DEL_JOB=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('job_id',''))" 2>/dev/null)
+          wait_for_job "v2" "$V2_DEL_JOB" "DELETE /v2/index/$COL/e2e.txt job → complete"
 
+          # ======================================================
           echo ""
-          echo "### Summary ###"
+          echo "╔══════════════════════════════════════╗"
+          echo "║            Summary                   ║"
+          echo "╚══════════════════════════════════════╝"
           if [ "$FAIL" = "0" ]; then
             echo "All E2E tests passed!"
           else
