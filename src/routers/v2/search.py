@@ -1,11 +1,13 @@
 import logging
 import os
-from fastapi import APIRouter, HTTPException, Request, Depends
-from src.models import SearchRequest
-from src.models.pagination import PaginationParams, PaginatedResponse
-from src.search.searcher import Searcher
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+
 from src.cache import QueryCache
 from src.clients import RedisClient
+from src.models import SearchRequest
+from src.models.pagination import PaginatedResponse, PaginationParams
+from src.search.searcher import Searcher
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -42,9 +44,12 @@ async def search_files(
         if not query or query.strip() == "":
             raise HTTPException(status_code=400, detail="Query cannot be empty")
 
-        # If no collections specified, use default
+        # If no collections specified, query all available collections
         if not collections:
-            collections = [COLLECTION_NAME]
+            from src.clients import QdrantClient
+
+            collections = await QdrantClient.get_collections()
+            logger.info(f"No collections specified, querying all: {collections}")
 
         redis = await RedisClient.get()
         query_cache = QueryCache(redis)
@@ -54,9 +59,7 @@ async def search_files(
             query=query,
             score_threshold=score_threshold,
             limit=MAX_SEARCH_LIMIT,
-            collections=",".join(
-                sorted(collections)
-            ),  # Include collections in cache key
+            collections=",".join(sorted(collections)),
         )
 
         if cached_results is None:
