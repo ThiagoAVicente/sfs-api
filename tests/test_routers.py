@@ -26,10 +26,11 @@ class TestIndexRouter:
         mock_file.content_type = "text/plain"
         mock_file.read = AsyncMock(return_value=b"test content")
 
-        with patch('src.routers.v1.index.MinIOClient') as mock_minio, \
-             patch('src.routers.v1.index.RedisClient') as mock_redis, \
-             patch('src.routers.v1.index.required'):
-
+        with (
+            patch("src.routers.v1.index.MinIOClient") as mock_minio,
+            patch("src.routers.v1.index.RedisClient") as mock_redis,
+            patch("src.routers.v1.index.required"),
+        ):
             # Mock MinIO operations
             mock_minio.object_exists.return_value = False
             mock_minio.put_object.return_value = True
@@ -42,8 +43,12 @@ class TestIndexRouter:
 
             # Assert
             assert result["job_id"] == "job-123"
-            mock_minio.object_exists.assert_called_once_with("test.txt")
-            mock_minio.put_object.assert_called_once()
+            mock_minio.object_exists.assert_called_once_with("default/test.txt")
+            # Verify put_object called with correct object name
+            put_call_kwargs = mock_minio.put_object.call_args.kwargs
+            assert put_call_kwargs["object_name"] == "default/test.txt"
+            assert put_call_kwargs["data"] == b"test content"
+            assert put_call_kwargs["content_type"] == "text/plain"
             mock_redis.enqueue_job.assert_called_once()
 
     @pytest.mark.asyncio
@@ -58,10 +63,11 @@ class TestIndexRouter:
         mock_file.content_type = "text/plain"
         mock_file.read = AsyncMock(return_value=b"")
 
-        with patch('src.routers.v1.index.MinIOClient') as mock_minio, \
-                patch('src.routers.v1.index.RedisClient') as mock_redis, \
-                patch('src.routers.v1.index.required'):
-
+        with (
+            patch("src.routers.v1.index.MinIOClient") as mock_minio,
+            patch("src.routers.v1.index.RedisClient") as mock_redis,
+            patch("src.routers.v1.index.required"),
+        ):
             # Mock MinIO operations
             mock_minio.object_exists.return_value = False
             mock_minio.put_object.return_value = True
@@ -86,8 +92,10 @@ class TestIndexRouter:
         mock_file.content_type = "text/plain"
         mock_file.read = AsyncMock(return_value=b"test content")
 
-        with patch('src.routers.v1.index.MinIOClient') as mock_minio, \
-             patch('src.routers.v1.index.required'):
+        with (
+            patch("src.routers.v1.index.MinIOClient") as mock_minio,
+            patch("src.routers.v1.index.required"),
+        ):
             mock_minio.object_exists.return_value = True
 
             with pytest.raises(HTTPException) as exc_info:
@@ -107,10 +115,11 @@ class TestIndexRouter:
         mock_file.content_type = "text/plain"
         mock_file.read = AsyncMock(return_value=b"updated content")
 
-        with patch('src.routers.v1.index.MinIOClient') as mock_minio, \
-             patch('src.routers.v1.index.RedisClient') as mock_redis, \
-             patch('src.routers.v1.index.required'):
-
+        with (
+            patch("src.routers.v1.index.MinIOClient") as mock_minio,
+            patch("src.routers.v1.index.RedisClient") as mock_redis,
+            patch("src.routers.v1.index.required"),
+        ):
             mock_minio.object_exists.return_value = True
             mock_minio.put_object.return_value = True
             mock_redis.enqueue_job = AsyncMock(return_value="job-456")
@@ -131,8 +140,10 @@ class TestIndexRouter:
         mock_file.content_type = "text/plain"
         mock_file.read = AsyncMock(return_value=b"test content")
 
-        with patch('src.routers.v1.index.MinIOClient') as mock_minio, \
-             patch('src.routers.v1.index.required'):
+        with (
+            patch("src.routers.v1.index.MinIOClient") as mock_minio,
+            patch("src.routers.v1.index.required"),
+        ):
             mock_minio.object_exists.return_value = False
             mock_minio.put_object.return_value = False
 
@@ -147,7 +158,7 @@ class TestIndexRouter:
         """Test getting job status successfully."""
         from src.routers.v1.index import get_status
 
-        with patch('src.routers.v1.index.RedisClient') as mock_redis:
+        with patch("src.routers.v1.index.RedisClient") as mock_redis:
             mock_redis.get_job_status = AsyncMock(return_value="complete")
 
             result = await get_status(mock_request, "job-123")
@@ -162,7 +173,7 @@ class TestIndexRouter:
         from src.routers.v1.index import get_status
         from fastapi import HTTPException
 
-        with patch('src.routers.v1.index.RedisClient') as mock_redis:
+        with patch("src.routers.v1.index.RedisClient") as mock_redis:
             mock_redis.get_job_status = AsyncMock(return_value=None)
 
             with pytest.raises(HTTPException) as exc_info:
@@ -176,7 +187,7 @@ class TestIndexRouter:
         """Test file deletion successfully enqueues job."""
         from src.routers.v1.index import delete_file
 
-        with patch('src.routers.v1.index.RedisClient') as mock_redis:
+        with patch("src.routers.v1.index.RedisClient") as mock_redis:
             mock_redis.enqueue_job = AsyncMock(return_value="job-789")
 
             result = await delete_file(mock_request, "test.txt")
@@ -200,11 +211,7 @@ class TestSearchRouter:
         """Test successful search."""
         from src.models import SearchRequest
 
-        search_req = SearchRequest(
-            query="test query",
-            limit=5,
-            score_threshold=0.5
-        )
+        search_req = SearchRequest(query="test query", limit=5, score_threshold=0.5)
 
         mock_results = [
             {"score": 0.95, "payload": {"text": "result 1", "file_path": "/test.txt"}},
@@ -212,10 +219,12 @@ class TestSearchRouter:
         ]
 
         # Patch before importing to disable rate limiting and mock Redis
-        with patch('src.routers.v1.search.limiter.enabled', False), \
-             patch('src.routers.v1.search.Searcher') as mock_searcher, \
-             patch('src.routers.v1.search.RedisClient') as mock_redis, \
-             patch('src.routers.v1.search.QueryCache') as mock_cache_class:
+        with (
+            patch("src.routers.v1.search.limiter.enabled", False),
+            patch("src.routers.v1.search.Searcher") as mock_searcher,
+            patch("src.routers.v1.search.RedisClient") as mock_redis,
+            patch("src.routers.v1.search.QueryCache") as mock_cache_class,
+        ):
             from src.routers.v1.search import search_files
 
             # Mock Redis and cache
@@ -240,10 +249,12 @@ class TestSearchRouter:
         search_req = SearchRequest(query="nonexistent")
 
         # Patch before importing to disable rate limiting and mock Redis
-        with patch('src.routers.v1.search.limiter.enabled', False), \
-             patch('src.routers.v1.search.Searcher') as mock_searcher, \
-             patch('src.routers.v1.search.RedisClient') as mock_redis, \
-             patch('src.routers.v1.search.QueryCache') as mock_cache_class:
+        with (
+            patch("src.routers.v1.search.limiter.enabled", False),
+            patch("src.routers.v1.search.Searcher") as mock_searcher,
+            patch("src.routers.v1.search.RedisClient") as mock_redis,
+            patch("src.routers.v1.search.QueryCache") as mock_cache_class,
+        ):
             from src.routers.v1.search import search_files
 
             # Mock Redis and cache
