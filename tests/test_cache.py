@@ -234,7 +234,7 @@ class TestQueryCache:
 
         # Test basic query
         key1 = cache.get_cache_key("test query", 0.5, 100)
-        assert key1.startswith("cache:search:")
+        assert key1.startswith("cache:search:v2:")
         assert len(key1.split(":")[-1]) == 32  # MD5 hash
 
         # Same parameters should generate same key

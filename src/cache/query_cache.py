@@ -11,12 +11,13 @@ class QueryCache(CacheAbs):
 
     prefix = "cache:search"
     DEFAULT_TTL = 1800  # 30 minutes for search results
+    CACHE_VERSION = "v2"  # Increment when cache format changes
 
     def get_cache_key(
         self, query: str, score_threshold: float = 0.0, limit: int = 100, **kwargs
     ) -> str:
         """
-        Generate cache key from search parameters.
+        Generate cache key from search parameters with version.
 
         Args:
             query: Search query text
@@ -25,7 +26,7 @@ class QueryCache(CacheAbs):
             **kwargs: Additional search parameters that affect results
 
         Returns:
-            Cache key string
+            Cache key string with version
         """
         # Include all parameters that affect search results
         cache_input = f"{query}:{score_threshold}:{limit}"
@@ -40,7 +41,8 @@ class QueryCache(CacheAbs):
         query_hash = hashlib.md5(
             cache_input.encode(), usedforsecurity=False
         ).hexdigest()
-        return f"{self.prefix}:{query_hash}"
+        # Include version in cache key to invalidate old format
+        return f"{self.prefix}:{self.CACHE_VERSION}:{query_hash}"
 
     async def get_query_results(
         self, query: str, score_threshold: float = 0.0, limit: int = 100, **kwargs
