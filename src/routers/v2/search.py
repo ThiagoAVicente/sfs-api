@@ -1,10 +1,11 @@
+import asyncio
 import logging
 import os
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from src.cache import QueryCache
-from src.clients import RedisClient
+from src.clients import QdrantClient, RedisClient
 from src.models import SearchRequest
 from src.models.pagination import PaginatedResponse, PaginationParams
 from src.search.searcher import Searcher
@@ -46,8 +47,6 @@ async def search_files(
 
         # If no collections specified, query all available collections
         if not collections:
-            from src.clients import QdrantClient
-
             collections = await QdrantClient.get_collections()
             logger.info(f"No collections specified, querying all: {collections}")
 
@@ -65,16 +64,20 @@ async def search_files(
         if cached_results is None:
             # Cache miss - search across all specified collections
             all_results = []
-            for collection_name in collections:
-                results = await Searcher.search(
+
+            tasks = [
+                Searcher.search(
                     query=query,
-                    collection_name=collection_name,
+                    collection_name=c,
                     limit=MAX_SEARCH_LIMIT,
                     score_threshold=score_threshold,
                 )
-                # Add collection name to each result
-                for result in results:
-                    result["collection"] = collection_name
+                for c in collections
+            ]
+            all_collection_results = await asyncio.gather(*tasks)
+            for collection_name, results in zip(collections, all_collection_results):
+                for r in results:
+                    r["collection"] = collection_name
                 all_results.extend(results)
 
             # Sort all results by score descending
