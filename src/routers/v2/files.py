@@ -6,6 +6,7 @@ from src.clients import MinIOClient, RedisClient
 from src.models.pagination import PaginationParams, PaginatedResponse
 from io import BytesIO
 from src.cache import FileCache
+from src.utils.validation import validate_collection_name
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -30,6 +31,9 @@ async def download_file(collection: str, file_name: str, request: Request):
         File content as streaming response
     """
     try:
+        # Validate collection name to prevent path traversal
+        collection = validate_collection_name(collection)
+
         obs_name = f"{collection}/{file_name}"
         # Check if file exists
         if not MinIOClient.object_exists(obs_name):
@@ -78,6 +82,10 @@ async def list_files(
         Paginated list of files with metadata
     """
     try:
+        # Validate collection name if provided
+        if collection:
+            collection = validate_collection_name(collection)
+
         # Build the full prefix: collection/prefix or just prefix
         full_prefix = f"{collection}/{prefix}" if collection else prefix
         full_prefix = full_prefix.strip("/")

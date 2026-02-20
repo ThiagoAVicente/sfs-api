@@ -5,6 +5,7 @@ from src.clients import RedisClient, MinIOClient
 from src.models import StatusResponse, JobRequest
 from src.utils import required
 from src.utils.support import FileType
+from src.utils.validation import validate_collection_name
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -33,6 +34,9 @@ async def index_file(
         job_id: Use this to check indexing status
     """
     try:
+        # Validate collection name to prevent path traversal
+        collection = validate_collection_name(collection)
+
         required(file, "file")
 
         required(file.filename, "filename")
@@ -139,6 +143,9 @@ async def delete_file(request: Request, collection: str, file_name: str):
         job id
     """
     try:
+        # Validate collection name to prevent path traversal
+        collection = validate_collection_name(collection)
+
         jreq = JobRequest(
             function="delete_file", collection=collection, file_path=file_name
         )
