@@ -2,33 +2,33 @@ name: Tests
 
 on:
   push:
-    branches: [ main dev ]
+    branches: [main, dev]
   pull_request:
-    branches: [ main dev ]
+    branches: [main, dev]
     types: [opened, synchronize]
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.13'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
 
-    - name: Install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
-    - name: Create venv and install dependencies
-      run: |
-        export PATH="$HOME/.local/bin:$PATH"
-        uv venv
-        uv pip install torch --index-url https://download.pytorch.org/whl/cpu
-        uv sync --extra dev --no-install-project
+      - name: Create venv and install dependencies
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          uv venv
+          uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+          uv sync --extra dev --no-install-project
 
-    - name: Run tests
-      run: |
-        export PATH="$HOME/.local/bin:$PATH"
-        uv run pytest -v
+      - name: Run tests
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          uv run pytest -v

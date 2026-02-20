@@ -2,40 +2,40 @@ name: Security Check
 
 on:
   push:
-    branches: [ main dev ]
+    branches: [main, dev]
   pull_request:
-    branches: [ main dev ]    
+    branches: [main, dev]
     types: [opened, synchronize]
   schedule:
-    - cron: '0 9 * * 1'
+    - cron: "0 9 * * 1"
 
 jobs:
   security:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.13'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
 
-    - name: Install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
-    - name: Install security tools
-      run: |
-        export PATH="$HOME/.local/bin:$PATH"
-        uv venv
-        uv pip install safety bandit
+      - name: Install security tools
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          uv venv
+          uv pip install safety bandit
 
-    - name: Run safety check
-      run: |
-        export PATH="$HOME/.local/bin:$PATH"
-        uv run safety check --json
+      - name: Run safety check
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          uv run safety check --json
 
-    - name: Run bandit security linter
-      run: |
-        export PATH="$HOME/.local/bin:$PATH"
-        uv run bandit -r src/ -f json
+      - name: Run bandit security linter
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          uv run bandit -r src/ -f json
