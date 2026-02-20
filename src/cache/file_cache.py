@@ -12,7 +12,7 @@ class FileCache(CacheAbs):
     prefix = "cache:files:list"
     DEFAULT_TTL = 3600  # 1 hour for file lists
 
-    def get_cache_key(self, file_prefix: str = '') -> str:
+    def get_cache_key(self, file_prefix: str = "") -> str:
         """
         Generate cache key from file prefix.
 
@@ -23,10 +23,12 @@ class FileCache(CacheAbs):
             Cache key string
         """
         # Hash the prefix to handle special characters and long paths
-        prefix_hash = hashlib.md5(file_prefix.encode()).hexdigest() # use md5 for speed. since this is a single user app the risk of collision is low
+        prefix_hash = hashlib.md5(
+            file_prefix.encode(), usedforsecurity=False
+        ).hexdigest()  # use md5 for speed. since this is a single user app the risk of collision is low
         return f"{self.prefix}:{prefix_hash}"
 
-    async def get_files(self, file_prefix: str = '') -> list[Any]|None:
+    async def get_files(self, file_prefix: str = "") -> list[Any] | None:
         """
         Get cached file list.
 
@@ -39,7 +41,9 @@ class FileCache(CacheAbs):
         cache_key = self.get_cache_key(file_prefix)
         return await self.get(cache_key)
 
-    async def cache_files(self, file_prefix: str, files: list[Any], ttl: int|None = None):
+    async def cache_files(
+        self, file_prefix: str, files: list[Any], ttl: int | None = None
+    ):
         """
         Cache file list.
 

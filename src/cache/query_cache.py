@@ -13,11 +13,7 @@ class QueryCache(CacheAbs):
     DEFAULT_TTL = 1800  # 30 minutes for search results
 
     def get_cache_key(
-        self,
-        query: str,
-        score_threshold: float = 0.0,
-        limit: int = 100,
-        **kwargs
+        self, query: str, score_threshold: float = 0.0, limit: int = 100, **kwargs
     ) -> str:
         """
         Generate cache key from search parameters.
@@ -41,16 +37,14 @@ class QueryCache(CacheAbs):
             cache_input = f"{cache_input}:{kwargs_str}"
 
         # Hash to create consistent, safe cache key
-        query_hash = hashlib.md5(cache_input.encode()).hexdigest()
+        query_hash = hashlib.md5(
+            cache_input.encode(), usedforsecurity=False
+        ).hexdigest()
         return f"{self.prefix}:{query_hash}"
 
     async def get_query_results(
-        self,
-        query: str,
-        score_threshold: float = 0.0,
-        limit: int = 100,
-        **kwargs
-    ) -> list[Any]|None:
+        self, query: str, score_threshold: float = 0.0, limit: int = 100, **kwargs
+    ) -> list[Any] | None:
         """
         Get cached search results.
 
@@ -72,8 +66,8 @@ class QueryCache(CacheAbs):
         results: list[Any],
         score_threshold: float = 0.0,
         limit: int = 100,
-        ttl: int|None = None,
-        **kwargs
+        ttl: int | None = None,
+        **kwargs,
     ):
         """
         Cache search query results.
