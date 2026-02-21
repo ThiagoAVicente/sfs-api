@@ -1,10 +1,13 @@
 import logging
 import os
+from io import BytesIO
+
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from src.clients import MinIOClient, RedisClient
-from io import BytesIO
+
 from src.cache import FileCache
+from src.clients import MinIOClient, RedisClient
+from src.utils.validation import validate_filename
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -12,8 +15,9 @@ router = APIRouter()
 # Import shared limiter
 from src.routers import limiter
 
-RATE_LIMIT_DOWNLOAD = os.environ.get('RATE_LIMIT_DOWNLOAD', '10')
-COLLECTION_NAME = os.environ.get('COLLECTION_NAME','default')
+RATE_LIMIT_DOWNLOAD = os.environ.get("RATE_LIMIT_DOWNLOAD", "10")
+COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "default")
+
 
 @router.get("/{file_name}")
 @limiter.limit(f"{RATE_LIMIT_DOWNLOAD}/minute")
@@ -29,9 +33,9 @@ async def download_file(file_name: str, request: Request):
         File content as streaming response
     """
     try:
+        file_name = validate_filename(file_name)
+        obs_name: str = f"{COLLECTION_NAME}/{file_name}"
 
-        obs_name:str = f"{COLLECTION_NAME}/{file_name}"
-        
         # Check if file exists
         if not MinIOClient.object_exists(obs_name):
             raise HTTPException(status_code=404, detail="File not found")
@@ -48,9 +52,7 @@ async def download_file(file_name: str, request: Request):
         return StreamingResponse(
             BytesIO(file_data),
             media_type="application/octet-stream",
-            headers={
-                "Content-Disposition": f"attachment; filename={file_name}"
-            }
+            headers={"Content-Disposition": f"attachment; filename={file_name}"},
         )
 
     except HTTPException:

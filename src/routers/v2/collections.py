@@ -1,5 +1,8 @@
 import logging
+import os
+
 from fastapi import APIRouter, HTTPException, Request
+
 from src.clients import QdrantClient
 
 logger = logging.getLogger(__name__)
@@ -8,11 +11,11 @@ router = APIRouter()
 # Import shared limiter
 from src.routers import limiter
 
-RATE_LIMIT = "60"
+RATE_LIMIT_COLLECTIONS = os.environ.get("RATE_LIMIT_COLLECTIONS", "30")
 
 
 @router.get("")
-@limiter.limit(f"{RATE_LIMIT}/minute")
+@limiter.limit(f"{RATE_LIMIT_COLLECTIONS}/minute")
 async def list_collections(request: Request):
     """
     List all available collections in Qdrant.

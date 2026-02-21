@@ -74,7 +74,9 @@ async def search_files(
                 )
                 for c in collections
             ]
-            all_collection_results = await asyncio.gather(*tasks)
+            all_collection_results = await asyncio.gather(
+                *tasks, return_exceptions=True
+            )
             for collection_name, results in zip(collections, all_collection_results):
                 for r in results:
                     r["collection"] = collection_name

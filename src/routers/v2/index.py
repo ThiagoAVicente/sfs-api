@@ -1,11 +1,13 @@
 import logging
 import os
-from fastapi import APIRouter, UploadFile, File, HTTPException, Request, Form
-from src.clients import RedisClient, MinIOClient
-from src.models import StatusResponse, JobRequest
+
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+
+from src.clients import MinIOClient, RedisClient
+from src.models import JobRequest, StatusResponse
 from src.utils import required
 from src.utils.support import FileType
-from src.utils.validation import validate_collection_name
+from src.utils.validation import validate_collection_name, validate_filename
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -40,7 +42,7 @@ async def index_file(
         required(file, "file")
 
         required(file.filename, "filename")
-        file_name: str = file.filename
+        file_name: str = validate_filename(file.filename)
 
         required(file.content_type, "content type")
         content_type: str = file.content_type
@@ -145,6 +147,7 @@ async def delete_file(request: Request, collection: str, file_name: str):
     try:
         # Validate collection name to prevent path traversal
         collection = validate_collection_name(collection)
+        file_name = validate_filename(file_name)
 
         jreq = JobRequest(
             function="delete_file", collection=collection, file_path=file_name
@@ -152,6 +155,8 @@ async def delete_file(request: Request, collection: str, file_name: str):
         job_id = await RedisClient.enqueue_job(jreq)
         return {"job_id": job_id}
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error deleting file: {e}")
         raise HTTPException(status_code=500, detail=str(e))

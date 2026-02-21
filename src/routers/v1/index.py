@@ -1,10 +1,13 @@
 import logging
 import os
-from fastapi import APIRouter, UploadFile, File, HTTPException, Request, Form
-from src.clients import RedisClient, MinIOClient
-from src.models import StatusResponse, JobRequest
+
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+
+from src.clients import MinIOClient, RedisClient
+from src.models import JobRequest, StatusResponse
 from src.utils import required
 from src.utils.support import FileType
+from src.utils.validation import validate_filename
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -34,7 +37,7 @@ async def index_file(
         required(file, "file")
 
         required(file.filename, "filename")
-        file_name: str = file.filename
+        file_name: str = validate_filename(file.filename)
 
         required(file.content_type, "content type")
         content_type: str = file.content_type

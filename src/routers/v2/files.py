@@ -1,12 +1,14 @@
 import logging
 import os
-from fastapi import APIRouter, HTTPException, Request, Depends
-from fastapi.responses import StreamingResponse
-from src.clients import MinIOClient, RedisClient
-from src.models.pagination import PaginationParams, PaginatedResponse
 from io import BytesIO
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import StreamingResponse
+
 from src.cache import FileCache
-from src.utils.validation import validate_collection_name
+from src.clients import MinIOClient, RedisClient
+from src.models.pagination import PaginatedResponse, PaginationParams
+from src.utils.validation import validate_collection_name, validate_filename
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -33,7 +35,7 @@ async def download_file(collection: str, file_name: str, request: Request):
     try:
         # Validate collection name to prevent path traversal
         collection = validate_collection_name(collection)
-
+        file_name = validate_filename(file_name)
         obs_name = f"{collection}/{file_name}"
         # Check if file exists
         if not MinIOClient.object_exists(obs_name):

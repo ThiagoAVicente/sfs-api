@@ -371,5 +371,153 @@ class TestPaginatedResponse:
         assert response.has_prev is False
 
 
+class TestCollectionsRouterV2:
+    """Tests for /v2/collections endpoint."""
+
+    @pytest.fixture
+    def mock_request(self):
+        """Create a mock Request object."""
+        request = MagicMock(spec=Request)
+        request.client.host = "127.0.0.1"
+        return request
+
+    @pytest.mark.asyncio
+    async def test_list_collections_success(self, mock_request):
+        """Test listing all collections."""
+        from src.routers.v2.collections import list_collections
+
+        mock_collections = ["default", "my-collection", "test-col"]
+
+        with (
+            patch("src.routers.v2.collections.QdrantClient") as mock_qdrant,
+            patch("src.routers.v2.collections.limiter.enabled", False),
+        ):
+            mock_qdrant.get_collections = AsyncMock(return_value=mock_collections)
+
+            result = await list_collections(mock_request)
+
+            assert result["collections"] == mock_collections
+            assert result["count"] == 3
+            mock_qdrant.get_collections.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_list_collections_empty(self, mock_request):
+        """Test listing collections when none exist."""
+        from src.routers.v2.collections import list_collections
+
+        with (
+            patch("src.routers.v2.collections.QdrantClient") as mock_qdrant,
+            patch("src.routers.v2.collections.limiter.enabled", False),
+        ):
+            mock_qdrant.get_collections = AsyncMock(return_value=[])
+
+            result = await list_collections(mock_request)
+
+            assert result["collections"] == []
+            assert result["count"] == 0
+
+    @pytest.mark.asyncio
+    async def test_list_collections_error(self, mock_request):
+        """Test error handling when listing collections fails."""
+        from src.routers.v2.collections import list_collections
+        from fastapi import HTTPException
+
+        with (
+            patch("src.routers.v2.collections.QdrantClient") as mock_qdrant,
+            patch("src.routers.v2.collections.limiter.enabled", False),
+        ):
+            mock_qdrant.get_collections = AsyncMock(
+                side_effect=Exception("Connection error")
+            )
+
+            with pytest.raises(HTTPException) as exc_info:
+                await list_collections(mock_request)
+
+            assert exc_info.value.status_code == 500
+            assert "Connection error" in str(exc_info.value.detail)
+
+
+class TestValidationIntegration:
+    """Integration tests for validation in v2 routers."""
+
+    @pytest.fixture
+    def mock_request(self):
+        """Create a mock Request object."""
+        request = MagicMock(spec=Request)
+        request.client.host = "127.0.0.1"
+        return request
+
+    @pytest.mark.asyncio
+    async def test_index_rejects_invalid_collection(self, mock_request):
+        """Test that index endpoint rejects invalid collection names."""
+        from src.routers.v2.index import index_file
+        from fastapi import HTTPException
+
+        mock_file = MagicMock()
+        mock_file.filename = "test.txt"
+        mock_file.content_type = "text/plain"
+        mock_file.read = AsyncMock(return_value=b"test content")
+
+        # Path traversal attempt
+        with pytest.raises(HTTPException) as exc_info:
+            await index_file(mock_request, mock_file, False, collection="../admin")
+
+        assert exc_info.value.status_code == 400
+        assert "Invalid collection name" in exc_info.value.detail
+
+    @pytest.mark.asyncio
+    async def test_index_rejects_invalid_filename(self, mock_request):
+        """Test that index endpoint rejects invalid filenames."""
+        from src.routers.v2.index import index_file
+        from fastapi import HTTPException
+
+        mock_file = MagicMock()
+        mock_file.filename = "../secret.txt"  # Path traversal in filename
+        mock_file.content_type = "text/plain"
+        mock_file.read = AsyncMock(return_value=b"test content")
+
+        with pytest.raises(HTTPException) as exc_info:
+            await index_file(mock_request, mock_file, False, collection="default")
+
+        assert exc_info.value.status_code == 400
+        assert "Invalid filename" in exc_info.value.detail
+
+    @pytest.mark.asyncio
+    async def test_download_rejects_invalid_collection(self, mock_request):
+        """Test that download endpoint rejects invalid collection names."""
+        from src.routers.v2.files import download_file
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException) as exc_info:
+            await download_file("../admin", "file.txt", mock_request)
+
+        assert exc_info.value.status_code == 400
+        assert "Invalid collection name" in exc_info.value.detail
+
+    @pytest.mark.asyncio
+    async def test_download_rejects_invalid_filename(self, mock_request):
+        """Test that download endpoint rejects invalid filenames."""
+        from src.routers.v2.files import download_file
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException) as exc_info:
+            await download_file("default", "../secret.txt", mock_request)
+
+        assert exc_info.value.status_code == 400
+        assert "Invalid filename" in exc_info.value.detail
+
+    @pytest.mark.asyncio
+    async def test_delete_rejects_invalid_collection(self, mock_request):
+        """Test that delete endpoint rejects invalid collection names."""
+        from src.routers.v2.index import delete_file
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException) as exc_info:
+            await delete_file(mock_request, "../admin", "file.txt")
+
+        assert exc_info.value.status_code == 400
+        assert "Invalid collection name" in exc_info.value.detail
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
