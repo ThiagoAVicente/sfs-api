@@ -12,8 +12,8 @@ router = APIRouter()
 # Import shared limiter
 from src.routers import limiter
 
-COLLECTION_NAME = os.environ.get('COLLECTION_NAME', 'default')
-RATE_LIMIT_SEARCH = os.environ.get('RATE_LIMIT_SEARCH', '30')
+COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "default")
+RATE_LIMIT_SEARCH = os.environ.get("RATE_LIMIT_SEARCH", "30")
 
 
 @router.post("", response_model=SearchResponse)
@@ -37,34 +37,26 @@ async def search_files(
     limit = body.limit
     score_threshold = body.score_threshold
 
+    if not query or query.strip() == "":
+        raise HTTPException(status_code=400, detail="Query cannot be empty")
+
     # check for hits on cache
     redis = await RedisClient.get()
     query_cache = QueryCache(redis)
     results = await query_cache.get_query_results(query, score_threshold, limit)
     if results is not None:
-        return SearchResponse(
-            query=query,
-            results=results,
-            count=len(results)
-        )
+        return SearchResponse(query=query, results=results, count=len(results))
 
     try:
-        if not query or query.strip() == "":
-            raise HTTPException(status_code=400, detail="Query cannot be empty")
-
         results = await Searcher.search(
             query=query,
             collection_name=COLLECTION_NAME,
             limit=limit,
-            score_threshold=score_threshold
+            score_threshold=score_threshold,
         )
 
         await query_cache.cache_query_results(query, results, score_threshold, limit)
-        return SearchResponse(
-            query=query,
-            results=results,
-            count=len(results)
-        )
+        return SearchResponse(query=query, results=results, count=len(results))
 
     except Exception as e:
         logger.error(f"Error searching: {e}")

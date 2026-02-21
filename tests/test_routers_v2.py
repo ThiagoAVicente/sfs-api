@@ -21,16 +21,14 @@ class TestFilesRouterV2:
         from src.routers.v2.files import list_files
         from src.models.pagination import PaginationParams
 
-        mock_files = [
-            {"name": f"file{i}.txt", "size": 1024}
-            for i in range(50)
-        ]
+        mock_files = [{"name": f"file{i}.txt", "size": 1024} for i in range(50)]
 
-        with patch('src.routers.v2.files.MinIOClient') as mock_minio, \
-             patch('src.routers.v2.files.RedisClient') as mock_redis, \
-             patch('src.routers.v2.files.FileCache') as mock_cache_class, \
-             patch('src.routers.v2.files.limiter.enabled', False):
-
+        with (
+            patch("src.routers.v2.files.MinIOClient") as mock_minio,
+            patch("src.routers.v2.files.RedisClient") as mock_redis,
+            patch("src.routers.v2.files.FileCache") as mock_cache_class,
+            patch("src.routers.v2.files.limiter.enabled", False),
+        ):
             # Mock Redis
             mock_redis.get = AsyncMock(return_value=MagicMock())
 
@@ -47,7 +45,9 @@ class TestFilesRouterV2:
             pagination = PaginationParams(page=1, limit=20)
 
             # Execute
-            result = await list_files(mock_request, "", pagination)
+            result = await list_files(
+                mock_request, collection="", pagination=pagination
+            )
 
             # Assert
             assert len(result.items) == 20  # First page, 20 items
@@ -66,11 +66,12 @@ class TestFilesRouterV2:
 
         mock_files = [{"name": f"file{i}.txt"} for i in range(30)]
 
-        with patch('src.routers.v2.files.MinIOClient') as mock_minio, \
-             patch('src.routers.v2.files.RedisClient') as mock_redis, \
-             patch('src.routers.v2.files.FileCache') as mock_cache_class, \
-             patch('src.routers.v2.files.limiter.enabled', False):
-
+        with (
+            patch("src.routers.v2.files.MinIOClient") as mock_minio,
+            patch("src.routers.v2.files.RedisClient") as mock_redis,
+            patch("src.routers.v2.files.FileCache") as mock_cache_class,
+            patch("src.routers.v2.files.limiter.enabled", False),
+        ):
             mock_redis.get = AsyncMock(return_value=MagicMock())
             mock_cache = MagicMock()
             mock_cache.get_files = AsyncMock(return_value=mock_files)  # Cache hit
@@ -78,7 +79,9 @@ class TestFilesRouterV2:
 
             pagination = PaginationParams(page=2, limit=20)
 
-            result = await list_files(mock_request, "", pagination)
+            result = await list_files(
+                mock_request, collection="", pagination=pagination
+            )
 
             assert len(result.items) == 10  # Last 10 items
             assert result.page == 2
@@ -93,11 +96,12 @@ class TestFilesRouterV2:
 
         mock_files = [{"name": "reports/file1.txt"}, {"name": "reports/file2.txt"}]
 
-        with patch('src.routers.v2.files.MinIOClient') as mock_minio, \
-             patch('src.routers.v2.files.RedisClient') as mock_redis, \
-             patch('src.routers.v2.files.FileCache') as mock_cache_class, \
-             patch('src.routers.v2.files.limiter.enabled', False):
-
+        with (
+            patch("src.routers.v2.files.MinIOClient") as mock_minio,
+            patch("src.routers.v2.files.RedisClient") as mock_redis,
+            patch("src.routers.v2.files.FileCache") as mock_cache_class,
+            patch("src.routers.v2.files.limiter.enabled", False),
+        ):
             mock_redis.get = AsyncMock(return_value=MagicMock())
             mock_cache = MagicMock()
             mock_cache.get_files = AsyncMock(return_value=None)
@@ -107,7 +111,9 @@ class TestFilesRouterV2:
 
             pagination = PaginationParams(page=1, limit=20)
 
-            result = await list_files(mock_request, "reports", pagination)
+            result = await list_files(
+                mock_request, collection="reports", pagination=pagination
+            )
 
             assert len(result.items) == 2
             mock_cache.get_files.assert_called_once_with("reports")
@@ -120,11 +126,12 @@ class TestFilesRouterV2:
 
         cached_files = [{"name": "cached.txt"}]
 
-        with patch('src.routers.v2.files.MinIOClient') as mock_minio, \
-             patch('src.routers.v2.files.RedisClient') as mock_redis, \
-             patch('src.routers.v2.files.FileCache') as mock_cache_class, \
-             patch('src.routers.v2.files.limiter.enabled', False):
-
+        with (
+            patch("src.routers.v2.files.MinIOClient") as mock_minio,
+            patch("src.routers.v2.files.RedisClient") as mock_redis,
+            patch("src.routers.v2.files.FileCache") as mock_cache_class,
+            patch("src.routers.v2.files.limiter.enabled", False),
+        ):
             mock_redis.get = AsyncMock(return_value=MagicMock())
             mock_cache = MagicMock()
             mock_cache.get_files = AsyncMock(return_value=cached_files)
@@ -132,7 +139,9 @@ class TestFilesRouterV2:
 
             pagination = PaginationParams(page=1, limit=20)
 
-            result = await list_files(mock_request, "", pagination)
+            result = await list_files(
+                mock_request, collection="", pagination=pagination
+            )
 
             # MinIO should not be called when cache hit
             mock_minio.list_objects.assert_not_called()
@@ -156,18 +165,20 @@ class TestSearchRouterV2:
         from src.models.pagination import PaginationParams
         from src.routers.v2.search import search_files
 
-        search_req = SearchRequest(query="test query", score_threshold=0.5)
+        search_req = SearchRequest(
+            query="test query", score_threshold=0.5, collections=["default"]
+        )
 
         mock_results = [
-            {"score": 0.9 - i * 0.01, "text": f"result {i}"}
-            for i in range(100)
+            {"score": 0.9 - i * 0.01, "text": f"result {i}"} for i in range(100)
         ]
 
-        with patch('src.routers.v2.search.Searcher') as mock_searcher, \
-             patch('src.routers.v2.search.RedisClient') as mock_redis, \
-             patch('src.routers.v2.search.QueryCache') as mock_cache_class, \
-             patch('src.routers.v2.search.limiter.enabled', False):
-
+        with (
+            patch("src.routers.v2.search.Searcher") as mock_searcher,
+            patch("src.routers.v2.search.RedisClient") as mock_redis,
+            patch("src.routers.v2.search.QueryCache") as mock_cache_class,
+            patch("src.routers.v2.search.limiter.enabled", False),
+        ):
             mock_redis.get = AsyncMock(return_value=MagicMock())
             mock_cache = MagicMock()
             mock_cache.get_query_results = AsyncMock(return_value=None)  # Cache miss
@@ -193,14 +204,15 @@ class TestSearchRouterV2:
         from src.models.pagination import PaginationParams
         from src.routers.v2.search import search_files
 
-        search_req = SearchRequest(query="test query")
+        search_req = SearchRequest(query="test query", collections=["default"])
         cached_results = [{"score": 0.95, "text": "cached result"}]
 
-        with patch('src.routers.v2.search.Searcher') as mock_searcher, \
-             patch('src.routers.v2.search.RedisClient') as mock_redis, \
-             patch('src.routers.v2.search.QueryCache') as mock_cache_class, \
-             patch('src.routers.v2.search.limiter.enabled', False):
-
+        with (
+            patch("src.routers.v2.search.Searcher") as mock_searcher,
+            patch("src.routers.v2.search.RedisClient") as mock_redis,
+            patch("src.routers.v2.search.QueryCache") as mock_cache_class,
+            patch("src.routers.v2.search.limiter.enabled", False),
+        ):
             mock_redis.get = AsyncMock(return_value=MagicMock())
             mock_cache = MagicMock()
             mock_cache.get_query_results = AsyncMock(return_value=cached_results)
@@ -224,10 +236,11 @@ class TestSearchRouterV2:
 
         search_req = SearchRequest(query="")
 
-        with patch('src.routers.v2.search.RedisClient') as mock_redis, \
-             patch('src.routers.v2.search.QueryCache') as mock_cache_class, \
-             patch('src.routers.v2.search.limiter.enabled', False):
-
+        with (
+            patch("src.routers.v2.search.RedisClient") as mock_redis,
+            patch("src.routers.v2.search.QueryCache") as mock_cache_class,
+            patch("src.routers.v2.search.limiter.enabled", False),
+        ):
             mock_redis.get = AsyncMock(return_value=MagicMock())
             mock_cache = MagicMock()
             mock_cache.get_query_results = AsyncMock(return_value=None)
@@ -248,15 +261,16 @@ class TestSearchRouterV2:
         from src.models.pagination import PaginationParams
         from src.routers.v2.search import search_files
 
-        search_req = SearchRequest(query="test")
+        search_req = SearchRequest(query="test", collections=["default"])
 
         # Cache returns 50 results
         cached_results = [{"score": 0.9, "text": f"result {i}"} for i in range(50)]
 
-        with patch('src.routers.v2.search.RedisClient') as mock_redis, \
-             patch('src.routers.v2.search.QueryCache') as mock_cache_class, \
-             patch('src.routers.v2.search.limiter.enabled', False):
-
+        with (
+            patch("src.routers.v2.search.RedisClient") as mock_redis,
+            patch("src.routers.v2.search.QueryCache") as mock_cache_class,
+            patch("src.routers.v2.search.limiter.enabled", False),
+        ):
             mock_redis.get = AsyncMock(return_value=MagicMock())
             mock_cache = MagicMock()
             mock_cache.get_query_results = AsyncMock(return_value=cached_results)
@@ -326,12 +340,7 @@ class TestPaginatedResponse:
         from src.models.pagination import PaginatedResponse
 
         items = [1, 2, 3, 4, 5]
-        response = PaginatedResponse.create(
-            items=items,
-            total=50,
-            page=1,
-            limit=5
-        )
+        response = PaginatedResponse.create(items=items, total=50, page=1, limit=5)
 
         assert response.items == items
         assert response.total == 50
@@ -345,12 +354,7 @@ class TestPaginatedResponse:
         """Test paginated response for last page."""
         from src.models.pagination import PaginatedResponse
 
-        response = PaginatedResponse.create(
-            items=[1, 2],
-            total=22,
-            page=3,
-            limit=10
-        )
+        response = PaginatedResponse.create(items=[1, 2], total=22, page=3, limit=10)
 
         assert response.total_pages == 3
         assert response.has_next is False
@@ -360,16 +364,159 @@ class TestPaginatedResponse:
         """Test paginated response when all items fit on one page."""
         from src.models.pagination import PaginatedResponse
 
-        response = PaginatedResponse.create(
-            items=[1, 2, 3],
-            total=3,
-            page=1,
-            limit=10
-        )
+        response = PaginatedResponse.create(items=[1, 2, 3], total=3, page=1, limit=10)
 
         assert response.total_pages == 1
         assert response.has_next is False
         assert response.has_prev is False
+
+
+class TestCollectionsRouterV2:
+    """Tests for /v2/collections endpoint."""
+
+    @pytest.fixture
+    def mock_request(self):
+        """Create a mock Request object."""
+        request = MagicMock(spec=Request)
+        request.client.host = "127.0.0.1"
+        return request
+
+    @pytest.mark.asyncio
+    async def test_list_collections_success(self, mock_request):
+        """Test listing all collections."""
+        from src.routers.v2.collections import list_collections
+
+        mock_collections = ["default", "my-collection", "test-col"]
+
+        with (
+            patch("src.routers.v2.collections.QdrantClient") as mock_qdrant,
+            patch("src.routers.v2.collections.limiter.enabled", False),
+        ):
+            mock_qdrant.get_collections = AsyncMock(return_value=mock_collections)
+
+            result = await list_collections(mock_request)
+
+            assert result["collections"] == mock_collections
+            assert result["count"] == 3
+            mock_qdrant.get_collections.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_list_collections_empty(self, mock_request):
+        """Test listing collections when none exist."""
+        from src.routers.v2.collections import list_collections
+
+        with (
+            patch("src.routers.v2.collections.QdrantClient") as mock_qdrant,
+            patch("src.routers.v2.collections.limiter.enabled", False),
+        ):
+            mock_qdrant.get_collections = AsyncMock(return_value=[])
+
+            result = await list_collections(mock_request)
+
+            assert result["collections"] == []
+            assert result["count"] == 0
+
+    @pytest.mark.asyncio
+    async def test_list_collections_error(self, mock_request):
+        """Test error handling when listing collections fails."""
+        from src.routers.v2.collections import list_collections
+        from fastapi import HTTPException
+
+        with (
+            patch("src.routers.v2.collections.QdrantClient") as mock_qdrant,
+            patch("src.routers.v2.collections.limiter.enabled", False),
+        ):
+            mock_qdrant.get_collections = AsyncMock(
+                side_effect=Exception("Connection error")
+            )
+
+            with pytest.raises(HTTPException) as exc_info:
+                await list_collections(mock_request)
+
+            assert exc_info.value.status_code == 500
+            assert "Connection error" in str(exc_info.value.detail)
+
+
+class TestValidationIntegration:
+    """Integration tests for validation in v2 routers."""
+
+    @pytest.fixture
+    def mock_request(self):
+        """Create a mock Request object."""
+        request = MagicMock(spec=Request)
+        request.client.host = "127.0.0.1"
+        return request
+
+    @pytest.mark.asyncio
+    async def test_index_rejects_invalid_collection(self, mock_request):
+        """Test that index endpoint rejects invalid collection names."""
+        from src.routers.v2.index import index_file
+        from fastapi import HTTPException
+
+        mock_file = MagicMock()
+        mock_file.filename = "test.txt"
+        mock_file.content_type = "text/plain"
+        mock_file.read = AsyncMock(return_value=b"test content")
+
+        # Path traversal attempt
+        with pytest.raises(HTTPException) as exc_info:
+            await index_file(mock_request, mock_file, False, collection="../admin")
+
+        assert exc_info.value.status_code == 400
+        assert "Invalid collection name" in exc_info.value.detail
+
+    @pytest.mark.asyncio
+    async def test_index_rejects_invalid_filename(self, mock_request):
+        """Test that index endpoint rejects invalid filenames."""
+        from src.routers.v2.index import index_file
+        from fastapi import HTTPException
+
+        mock_file = MagicMock()
+        mock_file.filename = "../secret.txt"  # Path traversal in filename
+        mock_file.content_type = "text/plain"
+        mock_file.read = AsyncMock(return_value=b"test content")
+
+        with pytest.raises(HTTPException) as exc_info:
+            await index_file(mock_request, mock_file, False, collection="default")
+
+        assert exc_info.value.status_code == 400
+        assert "Invalid filename" in exc_info.value.detail
+
+    @pytest.mark.asyncio
+    async def test_download_rejects_invalid_collection(self, mock_request):
+        """Test that download endpoint rejects invalid collection names."""
+        from src.routers.v2.files import download_file
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException) as exc_info:
+            await download_file("../admin", "file.txt", mock_request)
+
+        assert exc_info.value.status_code == 400
+        assert "Invalid collection name" in exc_info.value.detail
+
+    @pytest.mark.asyncio
+    async def test_download_rejects_invalid_filename(self, mock_request):
+        """Test that download endpoint rejects invalid filenames."""
+        from src.routers.v2.files import download_file
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException) as exc_info:
+            await download_file("default", "../secret.txt", mock_request)
+
+        assert exc_info.value.status_code == 400
+        assert "Invalid filename" in exc_info.value.detail
+
+    @pytest.mark.asyncio
+    async def test_delete_rejects_invalid_collection(self, mock_request):
+        """Test that delete endpoint rejects invalid collection names."""
+        from src.routers.v2.index import delete_file
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException) as exc_info:
+            await delete_file(mock_request, "../admin", "file.txt")
+
+        assert exc_info.value.status_code == 400
+        assert "Invalid collection name" in exc_info.value.detail
 
 
 if __name__ == "__main__":

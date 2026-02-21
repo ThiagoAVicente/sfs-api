@@ -86,7 +86,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
     container_name: sfs-api
     restart: always
     environment:
@@ -131,7 +131,7 @@ services:
   worker:
     build:
       context: .
-      dockerfile: Dockerfile.worker
+      dockerfile: docker/Dockerfile.worker
     #container_name: sfs-worker
     restart: always
     environment:

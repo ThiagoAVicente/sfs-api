@@ -3,26 +3,25 @@ from src.embeddings import EmbeddingGenerator
 from src.clients import QdrantClient, MinIOClient
 from src.utils import FileAbstraction
 import logging
-import os
 import re
 from .utils import clear_all_cache
 
 logger = logging.getLogger(__name__)
-COLLECTION_NAME = os.environ.get('COLLECTION_NAME', 'default')
-
-async def index_file(ctx, file_path:str, file_type:str, *args, **kwargs) -> dict:
+async def index_file(ctx,collection:str , file_path:str, file_type:str, *args, **kwargs) -> dict:
     """
     Index a file
     Args:
         ctx: arq context
+        collection: collection where to save file
         file_path: path to file on minio
+        file_type: file type
 
     Returns:
         Status dict with results
     """
     try:
         # get file from minio
-        file_data = MinIOClient.get_object(file_path)
+        file_data = MinIOClient.get_object(f"{collection}/{file_path}")
         if not file_data:
             raise Exception(f"Failed to download {file_path}")
 
@@ -37,6 +36,8 @@ async def index_file(ctx, file_path:str, file_type:str, *args, **kwargs) -> dict
         chunk_texts = [c['text'] for c in chunks]
         embeddings = await EmbeddingGenerator.embed_async(chunk_texts)
 
+        await QdrantClient.ensure_collection_exists(collection_name=collection)
+        
         # store in qdrant
         for i, (chunk,embedding) in enumerate(zip(chunks, embeddings)):
 
@@ -49,7 +50,7 @@ async def index_file(ctx, file_path:str, file_type:str, *args, **kwargs) -> dict
             }
 
             await QdrantClient.write(
-                collection_name=COLLECTION_NAME,
+                collection_name=collection,
                 vector=embedding,
                 metadata=metadata
             )
