@@ -8,6 +8,7 @@ from minio.sseconfig import Rule, SSEConfig
 @dataclass
 class MinIOConfig:
     """MinIO configuration from environment."""
+
     host: str
     port: int
     access_key: str
@@ -33,7 +34,6 @@ class MinIOClient:
 
     _client: Minio | None = None
     config = MinIOConfig.from_env()
-
 
     @classmethod
     def get(cls) -> Minio:
@@ -100,6 +100,7 @@ class MinIOClient:
 
         try:
             from io import BytesIO
+
             client.put_object(
                 bucket,
                 object_name,
@@ -113,7 +114,9 @@ class MinIOClient:
             return False
 
     @classmethod
-    def get_object(cls, object_name: str, bucket_name: str | None = None) -> bytes | None:
+    def get_object(
+        cls, object_name: str, bucket_name: str | None = None
+    ) -> bytes | None:
         """
         Download an object from MinIO.
 

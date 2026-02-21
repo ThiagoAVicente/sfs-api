@@ -13,7 +13,7 @@ def read_file_chunked(file_path: str, chunk_size: int = 100_000) -> Iterator[str
         Text segments
     """
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             while True:
                 chunk = f.read(chunk_size)
                 if not chunk:

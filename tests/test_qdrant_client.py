@@ -9,12 +9,17 @@ Includes:
 import pytest
 import numpy as np
 from unittest.mock import AsyncMock, MagicMock, patch
-from qdrant_client.models import Distance, VectorParams, CollectionsResponse, CollectionDescription
-
+from qdrant_client.models import (
+    Distance,
+    VectorParams,
+    CollectionsResponse,
+    CollectionDescription,
+)
 
 # ============================================================================
 # UNIT TESTS WITH MOCKS (Fast, no Docker required)
 # ============================================================================
+
 
 class TestQdrantClientMocked:
     """Unit tests using mocks - no real Qdrant connection."""
@@ -23,6 +28,7 @@ class TestQdrantClientMocked:
     def reset_client(self):
         """Reset singleton before each test."""
         from src.clients import QdrantClient
+
         QdrantClient._client = None
         yield
         QdrantClient._client = None
@@ -32,7 +38,7 @@ class TestQdrantClientMocked:
         """Test that init creates AsyncQdrantClient."""
         from src.clients import QdrantClient
 
-        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch("src.clients.qdrant_client.AsyncQdrantClient") as mock_client_class:
             mock_instance = AsyncMock()
             mock_client_class.return_value = mock_instance
 
@@ -46,7 +52,7 @@ class TestQdrantClientMocked:
         """Test that get() returns singleton instance."""
         from src.clients import QdrantClient
 
-        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch("src.clients.qdrant_client.AsyncQdrantClient") as mock_client_class:
             mock_instance = AsyncMock()
             mock_client_class.return_value = mock_instance
 
@@ -62,7 +68,7 @@ class TestQdrantClientMocked:
         """Test that close() clears the singleton."""
         from src.clients import QdrantClient
 
-        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch("src.clients.qdrant_client.AsyncQdrantClient") as mock_client_class:
             mock_instance = AsyncMock()
             mock_client_class.return_value = mock_instance
 
@@ -78,7 +84,7 @@ class TestQdrantClientMocked:
         """Test creating a new collection."""
         from src.clients import QdrantClient
 
-        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch("src.clients.qdrant_client.AsyncQdrantClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
 
@@ -88,8 +94,7 @@ class TestQdrantClientMocked:
             )
 
             result = await QdrantClient.ensure_collection_exists(
-                collection_name="test_collection",
-                vector_size=384
+                collection_name="test_collection", vector_size=384
             )
 
             assert result is True
@@ -100,7 +105,7 @@ class TestQdrantClientMocked:
         """Test that existing collection is not recreated."""
         from src.clients import QdrantClient
 
-        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch("src.clients.qdrant_client.AsyncQdrantClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
 
@@ -122,7 +127,7 @@ class TestQdrantClientMocked:
         """Test that write generates ID when not provided."""
         from src.clients import QdrantClient
 
-        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch("src.clients.qdrant_client.AsyncQdrantClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
 
@@ -130,9 +135,7 @@ class TestQdrantClientMocked:
             metadata = {"file_path": "/test.py", "chunk_index": 0}
 
             result = await QdrantClient.write(
-                vector=vector,
-                collection_name="test",
-                metadata=metadata
+                vector=vector, collection_name="test", metadata=metadata
             )
 
             assert result is True
@@ -144,7 +147,7 @@ class TestQdrantClientMocked:
         from src.clients import QdrantClient
         import hashlib
 
-        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch("src.clients.qdrant_client.AsyncQdrantClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
 
@@ -152,9 +155,7 @@ class TestQdrantClientMocked:
             metadata = {"file_path": "/test.py", "chunk_index": 0}
 
             await QdrantClient.write(
-                vector=vector,
-                collection_name="test",
-                metadata=metadata
+                vector=vector, collection_name="test", metadata=metadata
             )
 
             # Calculate expected ID
@@ -163,7 +164,7 @@ class TestQdrantClientMocked:
 
             # Check that upsert was called with deterministic ID
             call_args = mock_client.upsert.call_args
-            points = call_args.kwargs['points']
+            points = call_args.kwargs["points"]
             assert points[0].id == expected_id
 
     @pytest.mark.asyncio
@@ -171,7 +172,7 @@ class TestQdrantClientMocked:
         """Test that numpy array is converted to list."""
         from src.clients import QdrantClient
 
-        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch("src.clients.qdrant_client.AsyncQdrantClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
 
@@ -179,13 +180,11 @@ class TestQdrantClientMocked:
             metadata = {"file_path": "/test.py", "chunk_index": 0}
 
             await QdrantClient.write(
-                vector=vector,
-                collection_name="test",
-                metadata=metadata
+                vector=vector, collection_name="test", metadata=metadata
             )
 
             call_args = mock_client.upsert.call_args
-            points = call_args.kwargs['points']
+            points = call_args.kwargs["points"]
             # Verify vector is a list, not numpy array
             assert isinstance(points[0].vector, list)
             assert points[0].vector == [0.1, 0.2, 0.3]
@@ -195,7 +194,7 @@ class TestQdrantClientMocked:
         """Test that search returns similar vectors."""
         from src.clients import QdrantClient
 
-        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch("src.clients.qdrant_client.AsyncQdrantClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
 
@@ -211,9 +210,7 @@ class TestQdrantClientMocked:
 
             query_vector = np.array([0.1, 0.2, 0.3])
             results = await QdrantClient.search(
-                query_vector=query_vector,
-                collection_name="test",
-                limit=5
+                query_vector=query_vector, collection_name="test", limit=5
             )
 
             assert len(results) == 1
@@ -226,7 +223,7 @@ class TestQdrantClientMocked:
         """Test search with score threshold filter."""
         from src.clients import QdrantClient
 
-        with patch('src.clients.qdrant_client.AsyncQdrantClient') as mock_client_class:
+        with patch("src.clients.qdrant_client.AsyncQdrantClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
 
@@ -240,7 +237,7 @@ class TestQdrantClientMocked:
                 query_vector=query_vector,
                 collection_name="test",
                 limit=5,
-                score_threshold=0.8
+                score_threshold=0.8,
             )
 
             # Verify score_threshold was passed
@@ -252,6 +249,7 @@ class TestQdrantClientMocked:
 # INTEGRATION TESTS WITH TESTCONTAINERS (Requires Docker)
 # ============================================================================
 
+
 @pytest.mark.integration
 class TestQdrantClientIntegration:
     """Integration tests using real Qdrant container."""
@@ -261,7 +259,6 @@ class TestQdrantClientIntegration:
         """Start Qdrant container for tests."""
         from testcontainers.core.container import DockerContainer
         from testcontainers.core.wait_strategies import HttpWaitStrategy
-
 
         container = DockerContainer("qdrant/qdrant:latest")
         container.with_exposed_ports(6333)
@@ -292,6 +289,7 @@ class TestQdrantClientIntegration:
         # Reload module to pick up new env vars
         import importlib
         import src.clients.qdrant_client as qc_module
+
         importlib.reload(qc_module)
 
         yield
@@ -316,7 +314,7 @@ class TestQdrantClientIntegration:
         result = await QdrantClient.ensure_collection_exists(
             collection_name="test_real_collection",
             vector_size=384,
-            distance=Distance.COSINE
+            distance=Distance.COSINE,
         )
 
         assert result is True
@@ -336,8 +334,7 @@ class TestQdrantClientIntegration:
 
         # Create collection
         await QdrantClient.ensure_collection_exists(
-            collection_name=collection_name,
-            vector_size=3
+            collection_name=collection_name, vector_size=3
         )
 
         # Write vector
@@ -345,27 +342,25 @@ class TestQdrantClientIntegration:
         metadata = {
             "file_path": "/test/file.py",
             "text": "test content",
-            "chunk_index": 0
+            "chunk_index": 0,
         }
 
         result = await QdrantClient.write(
-            vector=vector,
-            collection_name=collection_name,
-            metadata=metadata
+            vector=vector, collection_name=collection_name, metadata=metadata
         )
 
         assert result is True
 
         # Calculate expected ID
         import hashlib
+
         id_string = "/test/file.py:0"
         expected_id = int(hashlib.md5(id_string.encode()).hexdigest()[:16], 16)
 
         # Retrieve and verify
         client = await QdrantClient.get()
         points = await client.retrieve(
-            collection_name=collection_name,
-            ids=[expected_id]
+            collection_name=collection_name, ids=[expected_id]
         )
 
         assert len(points) == 1
@@ -381,8 +376,7 @@ class TestQdrantClientIntegration:
         collection_name = "test_multi_write"
 
         await QdrantClient.ensure_collection_exists(
-            collection_name=collection_name,
-            vector_size=2
+            collection_name=collection_name, vector_size=2
         )
 
         # Write multiple vectors
@@ -391,9 +385,7 @@ class TestQdrantClientIntegration:
             metadata = {"chunk_index": i, "file_path": f"/file{i}.py"}
 
             await QdrantClient.write(
-                vector=vector,
-                collection_name=collection_name,
-                metadata=metadata
+                vector=vector, collection_name=collection_name, metadata=metadata
             )
 
         # Verify count
@@ -410,30 +402,42 @@ class TestQdrantClientIntegration:
 
         # Create collection
         await QdrantClient.ensure_collection_exists(
-            collection_name=collection_name,
-            vector_size=3
+            collection_name=collection_name, vector_size=3
         )
 
         # Write test vectors
         vectors = [
-            (np.array([1.0, 0.0, 0.0]), {"text": "vector A", "chunk_index": 0, "file_path": "/a.py"}),
-            (np.array([0.9, 0.1, 0.0]), {"text": "vector B (similar to A)", "chunk_index": 1, "file_path": "/b.py"}),
-            (np.array([0.0, 1.0, 0.0]), {"text": "vector C (different)", "chunk_index": 2, "file_path": "/c.py"}),
+            (
+                np.array([1.0, 0.0, 0.0]),
+                {"text": "vector A", "chunk_index": 0, "file_path": "/a.py"},
+            ),
+            (
+                np.array([0.9, 0.1, 0.0]),
+                {
+                    "text": "vector B (similar to A)",
+                    "chunk_index": 1,
+                    "file_path": "/b.py",
+                },
+            ),
+            (
+                np.array([0.0, 1.0, 0.0]),
+                {
+                    "text": "vector C (different)",
+                    "chunk_index": 2,
+                    "file_path": "/c.py",
+                },
+            ),
         ]
 
         for vector, metadata in vectors:
             await QdrantClient.write(
-                vector=vector,
-                collection_name=collection_name,
-                metadata=metadata
+                vector=vector, collection_name=collection_name, metadata=metadata
             )
 
         # Search for vector similar to A
         query_vector = np.array([1.0, 0.0, 0.0])
         results = await QdrantClient.search(
-            query_vector=query_vector,
-            collection_name=collection_name,
-            limit=3
+            query_vector=query_vector, collection_name=collection_name, limit=3
         )
 
         # Should find vectors A and B (similar), not C
@@ -450,20 +454,19 @@ class TestQdrantClientIntegration:
         collection_name = "test_threshold_collection"
 
         await QdrantClient.ensure_collection_exists(
-            collection_name=collection_name,
-            vector_size=2
+            collection_name=collection_name, vector_size=2
         )
 
         # Write vectors
         await QdrantClient.write(
             vector=np.array([1.0, 0.0]),
             collection_name=collection_name,
-            metadata={"text": "similar", "chunk_index": 0, "file_path": "/sim.py"}
+            metadata={"text": "similar", "chunk_index": 0, "file_path": "/sim.py"},
         )
         await QdrantClient.write(
             vector=np.array([0.0, 1.0]),
             collection_name=collection_name,
-            metadata={"text": "different", "chunk_index": 1, "file_path": "/diff.py"}
+            metadata={"text": "different", "chunk_index": 1, "file_path": "/diff.py"},
         )
 
         # Search with high threshold (should filter out different vector)
@@ -472,7 +475,7 @@ class TestQdrantClientIntegration:
             query_vector=query_vector,
             collection_name=collection_name,
             limit=10,
-            score_threshold=0.9
+            score_threshold=0.9,
         )
 
         # Should only return the similar vector

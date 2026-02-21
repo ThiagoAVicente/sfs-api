@@ -50,8 +50,24 @@ markers = [
     "integration: marks tests as integration tests (require Docker)",
 ]
 
+[tool.black]
+line-length = 88
+target-version = ['py313']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | \.pytest_cache
+  | __pycache__
+  | build
+  | dist
+)/
+'''
+
 [dependency-groups]
 dev = [
+    "black>=26.1.0",
     "python-multipart>=0.0.21",
 ]
 test = [

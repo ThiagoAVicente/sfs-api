@@ -6,17 +6,17 @@ from src.indexer import Chunker
 class TestFindChar(unittest.TestCase):
     def test_find_char_finds_last_occurrence(self):
         text = "Hello\nWorld\nTest"
-        result = Chunker._find_char(text, '\n', 0, 15)
+        result = Chunker._find_char(text, "\n", 0, 15)
         assert result == 11
 
     def test_find_char_returns_none_when_not_found(self):
         text = "Hello World"
-        result = Chunker._find_char(text, '\n', 0, 11)
+        result = Chunker._find_char(text, "\n", 0, 11)
         assert result is None
 
     def test_find_char_respects_boundaries(self):
         text = "Hello\nWorld\nTest"
-        result = Chunker._find_char(text, '\n', 0, 10)
+        result = Chunker._find_char(text, "\n", 0, 10)
         assert result == 5
 
 
@@ -43,6 +43,7 @@ class TestChunkText(unittest.TestCase):
 
         with self.assertRaises(ValueError) as context:
             from src.indexer import chunker
+
             old_size = chunker.chunk_size
             old_overlap = chunker.overlap
             chunker.chunk_size = 50
@@ -150,7 +151,7 @@ def validate_credentials(user, pwd):
         chunks = Chunker.chunk_text(text)
 
         for chunk in chunks:
-            extracted = text[chunk["start"]:chunk["end"]]
+            extracted = text[chunk["start"] : chunk["end"]]
             assert extracted == chunk["text"]
 
 

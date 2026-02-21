@@ -15,7 +15,7 @@ class TestFileAbstraction:
 
     def test_get_text_from_text_file_with_utf8(self):
         """Test extracting text from UTF-8 encoded text file."""
-        file_data = "Hello, 世界! 🌍".encode('utf-8')
+        file_data = "Hello, 世界! 🌍".encode("utf-8")
         result = FileAbstraction.get_text(file_data, "text")
         assert result == "Hello, 世界! 🌍"
 

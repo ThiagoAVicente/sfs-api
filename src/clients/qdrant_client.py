@@ -7,7 +7,7 @@ from qdrant_client.models import (
     FilterSelector,
     Filter,
     FieldCondition,
-    MatchValue
+    MatchValue,
 )
 import hashlib
 import numpy as np
@@ -16,8 +16,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 host = os.environ.get("QDRANT_HOST", "localhost")
-s_port:str = os.environ.get("QDRANT_PORT", "6333")
-port:int
+s_port: str = os.environ.get("QDRANT_PORT", "6333")
+port: int
 try:
     port = int(s_port)
 except ValueError:
@@ -56,7 +56,7 @@ class QdrantClient:
         cls,
         collection_name: str,
         vector_size: int = 384,
-        distance: Distance = Distance.COSINE
+        distance: Distance = Distance.COSINE,
     ) -> bool:
         """
         Create collection if it doesn't exist.
@@ -81,7 +81,7 @@ class QdrantClient:
         # Create new collection
         await client.create_collection(
             collection_name=collection_name,
-            vectors_config=VectorParams(size=vector_size, distance=distance)
+            vectors_config=VectorParams(size=vector_size, distance=distance),
         )
         logger.info(f"Created collection '{collection_name}'")
         return True
@@ -90,11 +90,11 @@ class QdrantClient:
     async def get_collections(cls) -> list[str]:
         client = await cls.get()
         collections = await client.get_collections()
-        
+
         existing_names = [c.name for c in collections.collections]
 
         return existing_names
-    
+
     @classmethod
     async def write(
         cls,
@@ -121,48 +121,35 @@ class QdrantClient:
         chunk_idx = metadata["chunk_index"]
 
         id_string = f"{file_path}:{chunk_idx}"
-        point_id = int(hashlib.md5(id_string.encode(), usedforsecurity=False).hexdigest()[:16], 16)
+        point_id = int(
+            hashlib.md5(id_string.encode(), usedforsecurity=False).hexdigest()[:16], 16
+        )
 
         # Create point with vector + metadata
-        point = PointStruct(
-            id=point_id,
-            vector=vector.tolist(),
-            payload=metadata
-        )
+        point = PointStruct(id=point_id, vector=vector.tolist(), payload=metadata)
 
         # Write to Qdrant
-        await client.upsert(
-            collection_name=collection_name,
-            points=[point]
-        )
+        await client.upsert(collection_name=collection_name, points=[point])
 
         logger.info(f"Wrote point {point_id} to '{collection_name}'")
         return True
 
     @classmethod
-    async def delete_file(
-        cls,
-        collection_name:str,
-        file_path:str
-    ):
+    async def delete_file(cls, collection_name: str, file_path: str):
         """
         Remove all vectors related to a file
         Args:
             file_path: Path to file
         """
         client = await cls.get()
-        filter:Filter = Filter(
-            must=[
-                FieldCondition(key="file_path", match=MatchValue(value=file_path))
-            ]
+        filter: Filter = Filter(
+            must=[FieldCondition(key="file_path", match=MatchValue(value=file_path))]
         )
-        points_selector:FilterSelector = FilterSelector(filter=filter)
+        points_selector: FilterSelector = FilterSelector(filter=filter)
 
         await client.delete(
-            collection_name=collection_name,
-            points_selector=points_selector
+            collection_name=collection_name, points_selector=points_selector
         )
-
 
     @classmethod
     async def search(
@@ -170,7 +157,7 @@ class QdrantClient:
         query_vector: np.ndarray,
         collection_name: str,
         limit: int = 5,
-        score_threshold: float | None = None
+        score_threshold: float | None = None,
     ) -> list[dict]:
         """
         Search for similar vectors in collection.
@@ -190,14 +177,10 @@ class QdrantClient:
             collection_name=collection_name,
             query=query_vector.tolist(),
             limit=limit,
-            score_threshold=score_threshold
+            score_threshold=score_threshold,
         )
 
         # Convert to dict format
         return [
-            {
-                "score":    point.score,
-                "payload":  point.payload
-            }
-            for point in result.points
+            {"score": point.score, "payload": point.payload} for point in result.points
         ]

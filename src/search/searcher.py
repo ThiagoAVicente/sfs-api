@@ -10,7 +10,7 @@ class Searcher:
         query: str,
         collection_name: str,
         limit: int = 5,
-        score_threshold: float = 0.5
+        score_threshold: float = 0.5,
     ) -> list[dict]:
         """
         Search for similar documents.
@@ -39,5 +39,5 @@ class Searcher:
             query_vector=query_embedding,
             collection_name=collection_name,
             limit=limit,
-            score_threshold=score_threshold
+            score_threshold=score_threshold,
         )

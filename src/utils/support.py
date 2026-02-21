@@ -1,18 +1,20 @@
 import filetype
 
-NS:str = "Not supported"
+NS: str = "Not supported"
+
 
 class FileTypeResponse:
-    def __init__(self, val:bool, explanation:str, type:str|None = None):
+    def __init__(self, val: bool, explanation: str, type: str | None = None):
         self.val = val
         self.explanation = explanation
         self.type = type
 
+
 class FileType:
-    _allowed_non_text:frozenset[str] = frozenset(['application/pdf'])
+    _allowed_non_text: frozenset[str] = frozenset(["application/pdf"])
 
     @classmethod
-    def is_supported(cls, file_content:bytes) -> FileTypeResponse:
+    def is_supported(cls, file_content: bytes) -> FileTypeResponse:
         """
         Checks if the file content is supported by the system.
         Args:
@@ -26,7 +28,7 @@ class FileType:
             return FileTypeResponse(True, "", kind.extension)
 
         try:
-            decoded = file_content.decode('utf-8')
+            decoded = file_content.decode("utf-8")
         except UnicodeDecodeError:
             return FileTypeResponse(False, NS)
 
@@ -36,4 +38,4 @@ class FileType:
         if not decoded or not any(c.isprintable() and not c.isspace() for c in decoded):
             return FileTypeResponse(False, NS)
 
-        return FileTypeResponse(True, "","text")
+        return FileTypeResponse(True, "", "text")

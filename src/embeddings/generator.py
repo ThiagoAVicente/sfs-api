@@ -12,8 +12,7 @@ def _get_executor() -> ThreadPoolExecutor:
     global _executor
     if _executor is None:
         _executor = ThreadPoolExecutor(
-            max_workers=os.cpu_count(),
-            thread_name_prefix="embedding"
+            max_workers=os.cpu_count(), thread_name_prefix="embedding"
         )
     return _executor
 
@@ -64,4 +63,6 @@ class EmbeddingGenerator:
             np.ndarray: An array of embeddings
         """
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(_get_executor(), EmbeddingGenerator.embed, texts)
+        return await loop.run_in_executor(
+            _get_executor(), EmbeddingGenerator.embed, texts
+        )

@@ -3,10 +3,11 @@ import os
 chunk_size = int(os.getenv("CHUNK_SIZE", 1000))
 overlap = int(os.getenv("OVERLAP", 200))
 
+
 class Chunker:
 
     @staticmethod
-    def _find_char(text:str, char:str, start:int, end:int) -> int|None:
+    def _find_char(text: str, char: str, start: int, end: int) -> int | None:
         """
         Find last occurrence of char in text within limits
 
@@ -43,11 +44,11 @@ class Chunker:
         start: int = 0
         text_size: int = len(text)
         increment: int = chunk_size - overlap
-        natural_boundaries:tuple[str,...] = ("\n", ".", " ")
+        natural_boundaries: tuple[str, ...] = ("\n", ".", " ")
 
         # declarations for hints
-        boundary:str
-        natural_end:int | None
+        boundary: str
+        natural_end: int | None
 
         while start < text_size:
             end: int = min(start + chunk_size, text_size)
@@ -58,20 +59,18 @@ class Chunker:
                 boundary_search_start = max(start, end - int(chunk_size * 0.2))
 
                 for boundary in natural_boundaries:
-                    natural_end = Chunker._find_char(text, boundary, boundary_search_start, end)
+                    natural_end = Chunker._find_char(
+                        text, boundary, boundary_search_start, end
+                    )
 
-                    if natural_end is None or natural_end <= start :
+                    if natural_end is None or natural_end <= start:
                         continue
 
                     # stop at natural boundary instead
-                    end = natural_end +1
+                    end = natural_end + 1
                     break
 
-            chunks.append({
-                "text": text[start:end],
-                "start": start,
-                "end": end
-            })
+            chunks.append({"text": text[start:end], "start": start, "end": end})
 
             start += increment
 

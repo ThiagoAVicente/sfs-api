@@ -36,7 +36,7 @@ class CacheAbs(ABC):
         """
         raise NotImplementedError("Subclasses must implement get_cache_key method")
 
-    async def get(self, cache_key: str) -> Any|None:
+    async def get(self, cache_key: str) -> Any | None:
         """
         Get cached data.
 
@@ -57,7 +57,7 @@ class CacheAbs(ABC):
             logger.error(f"Error getting cache key {cache_key}: {e}")
             return None
 
-    async def set(self, cache_key: str, data: Any, ttl: int|None = None):
+    async def set(self, cache_key: str, data: Any, ttl: int | None = None):
         """
         Set cached data with TTL.
 
@@ -87,7 +87,7 @@ class CacheAbs(ABC):
         except Exception as e:
             logger.error(f"Error deleting cache key {cache_key}: {e}")
 
-    async def clear(self, pattern: str|None = None):
+    async def clear(self, pattern: str | None = None):
         """
         Clear cache entries matching a pattern.
 
@@ -101,8 +101,8 @@ class CacheAbs(ABC):
             if pattern is None:
                 pattern = f"{self.prefix}:*"
 
-            cursor:int = 0
-            keys:list = []
+            cursor: int = 0
+            keys: list = []
 
             while True:
 
@@ -111,10 +111,11 @@ class CacheAbs(ABC):
                 if cursor == 0:
                     break
 
-
             if keys:
                 await self.redis.delete(*keys)
-                logger.info(f"Cleared {len(keys)} cache entries matching pattern: {pattern}")
+                logger.info(
+                    f"Cleared {len(keys)} cache entries matching pattern: {pattern}"
+                )
                 return len(keys)
             logger.debug(f"No cache entries found for pattern: {pattern}")
             return 0
@@ -145,5 +146,5 @@ class CacheAbs(ABC):
             Deserialized data
         """
         if isinstance(data, bytes):
-            data = data.decode('utf-8')
+            data = data.decode("utf-8")
         return json.loads(data)

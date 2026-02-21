@@ -33,6 +33,7 @@ async def setup_redis_client(redis_container):
     # Reload module
     import importlib
     import src.clients.redis_client as redis_module
+
     importlib.reload(redis_module)
 
     yield
@@ -83,7 +84,7 @@ class TestRedisClientIntegration:
         # Note: This requires a worker function to be registered
         # For now, we test that the method works
         try:
-            job_id = await RedisClient.enqueue_job('test_function', 'test.txt')
+            job_id = await RedisClient.enqueue_job("test_function", "test.txt")
             assert job_id is not None
             assert isinstance(job_id, str)
         except Exception:

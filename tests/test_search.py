@@ -34,6 +34,7 @@ async def setup(qdrant_container):
 
     import importlib
     import src.clients.qdrant_client as qc_module
+
     importlib.reload(qc_module)
 
     yield
@@ -53,15 +54,14 @@ async def test_search_end_to_end():
     collection_name = "test_collection"
 
     await QdrantClient.ensure_collection_exists(
-        collection_name=collection_name,
-        vector_size=384
+        collection_name=collection_name, vector_size=384
     )
 
     # Insert test documents
     docs = [
         "Python is a programming language",
         "JavaScript is used for web development",
-        "Machine learning uses neural networks"
+        "Machine learning uses neural networks",
     ]
 
     embeddings = EmbeddingGenerator.embed(docs)
@@ -70,14 +70,12 @@ async def test_search_end_to_end():
         await QdrantClient.write(
             vector=embedding,
             collection_name=collection_name,
-            metadata={"text": text, "chunk_index": i, "file_path": f"/file{i}.py"}
+            metadata={"text": text, "chunk_index": i, "file_path": f"/file{i}.py"},
         )
 
     # Search
     results = await Searcher.search(
-        query="programming code",
-        collection_name=collection_name,
-        limit=3
+        query="programming code", collection_name=collection_name, limit=3
     )
 
     assert len(results) > 0
@@ -96,13 +94,12 @@ async def test_search_with_threshold():
     collection_name = "test_threshold"
 
     await QdrantClient.ensure_collection_exists(
-        collection_name=collection_name,
-        vector_size=384
+        collection_name=collection_name, vector_size=384
     )
 
     docs = [
         "artificial intelligence and machine learning",
-        "cooking recipes and food preparation"
+        "cooking recipes and food preparation",
     ]
 
     embeddings = EmbeddingGenerator.embed(docs)
@@ -111,14 +108,14 @@ async def test_search_with_threshold():
         await QdrantClient.write(
             vector=embedding,
             collection_name=collection_name,
-            metadata={"text": text, "chunk_index": i, "file_path": f"/doc{i}.txt"}
+            metadata={"text": text, "chunk_index": i, "file_path": f"/doc{i}.txt"},
         )
 
     results = await Searcher.search(
         query="AI and neural networks",
         collection_name=collection_name,
         limit=10,
-        score_threshold=0.6
+        score_threshold=0.6,
     )
 
     for result in results:
@@ -136,8 +133,7 @@ async def test_search_clips_invalid_params():
     collection_name = "test_params"
 
     await QdrantClient.ensure_collection_exists(
-        collection_name=collection_name,
-        vector_size=384
+        collection_name=collection_name, vector_size=384
     )
 
     EmbeddingGenerator.embed(["test"])
@@ -147,11 +143,11 @@ async def test_search_clips_invalid_params():
         query="test",
         collection_name=collection_name,
         limit=-5,  # Should be clipped to 1
-        score_threshold=2.0  # Should be clipped to 1.0
+        score_threshold=2.0,  # Should be clipped to 1.0
     )
 
     await Searcher.search(
         query="test",
         collection_name=collection_name,
-        score_threshold=-1.0  # Should be clipped to 0.0
+        score_threshold=-1.0,  # Should be clipped to 0.0
     )

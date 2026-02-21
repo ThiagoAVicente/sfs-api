@@ -16,5 +16,6 @@ device = os.getenv("DEVICE", "cpu")
 # Load model at module import time
 _model: SentenceTransformer = SentenceTransformer(MODEL, device=device)
 
+
 def get_model() -> SentenceTransformer:
     return _model

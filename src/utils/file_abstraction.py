@@ -6,8 +6,9 @@ import os
 
 logger = logging.getLogger(__name__)
 
-_pdf_max_pages = os.environ.get('PDF_MAX_PAGES', 500)
+_pdf_max_pages = os.environ.get("PDF_MAX_PAGES", 500)
 PDF_MAX_PAGES = int(_pdf_max_pages)
+
 
 class FileAbstraction:
     @staticmethod
@@ -20,10 +21,10 @@ class FileAbstraction:
         Returns:
             str: The extracted text from the file.
         """
-        if file_type == 'text':
-            return file_data.decode('utf-8', errors="replace")
+        if file_type == "text":
+            return file_data.decode("utf-8", errors="replace")
 
-        elif file_type == 'pdf':
+        elif file_type == "pdf":
             return FileAbstraction._pdf_to_text(file_data)
 
         else:
@@ -45,7 +46,7 @@ class FileAbstraction:
             if len(reader.pages) > PDF_MAX_PAGES:
                 logger.warning(f"PDF has more than {PDF_MAX_PAGES} pages")
                 raise ValueError(f"PDF has more than {PDF_MAX_PAGES} pages")
-        except (PdfReadError, PyPdfError,KeyError) as e:
+        except (PdfReadError, PyPdfError, KeyError) as e:
             logger.error(f"Failed to read PDF: {e}")
             raise ValueError(f"Malformed PDF file: {e}") from e
         except ValueError as e:
@@ -56,7 +57,6 @@ class FileAbstraction:
             raise ValueError(f"Error reading PDF: {e}") from e
 
         text_parts: list[str] = []
-
 
         for page in reader.pages:
             try:

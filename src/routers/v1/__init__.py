@@ -6,18 +6,6 @@ from fastapi import APIRouter
 router = APIRouter()
 
 # Include routers
-router.include_router(
-    index_router,
-    prefix="/index",
-    tags=["indexing"]
-)
-router.include_router(
-    search_router,
-    prefix="/search",
-    tags=["search"]
-)
-router.include_router(
-    files_router,
-    prefix="/files",
-    tags=["files"]
-)
+router.include_router(index_router, prefix="/index", tags=["indexing"])
+router.include_router(search_router, prefix="/search", tags=["search"])
+router.include_router(files_router, prefix="/files", tags=["files"])

@@ -1,7 +1,7 @@
 # Semantic File Search API (sfs-api)
 
 [![Tests](https://github.com/ThiagoAVicente/sfs-api/workflows/Tests/badge.svg)](https://github.com/ThiagoAVicente/sfs-api/actions/workflows/test.yml)
-[![Security](https://github.com/ThiagoAVicente/sfs-api/workflows/Security/badge.svg)](https://github.com/ThiagoAVicente/sfs-api/actions/workflows/security.yml)
+[![Security Check](https://github.com/ThiagoAVicente/sfs-api/workflows/Security%20Check/badge.svg)](https://github.com/ThiagoAVicente/sfs-api/actions/workflows/security.yml)
 [![Python](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green.svg)](https://fastapi.tiangolo.com)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)

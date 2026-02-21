@@ -2,11 +2,12 @@ from pydantic import BaseModel, Field
 from typing import Any, Generic, TypeVar
 from math import ceil
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class PaginationParams(BaseModel):
     """Pagination query parameters."""
+
     limit: int = Field(default=20, ge=1, le=100, description="Items per page")
     page: int = Field(default=1, ge=1, description="Page number (1-indexed)")
 
@@ -18,6 +19,7 @@ class PaginationParams(BaseModel):
 
 class PaginatedResponse(BaseModel, Generic[T]):
     """Generic paginated response."""
+
     items: list[T]
     total: int
     limit: int
@@ -28,11 +30,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
 
     @classmethod
     def create(
-        cls,
-        items: list[T],
-        total: int,
-        page: int,
-        limit: int
+        cls, items: list[T], total: int, page: int, limit: int
     ) -> "PaginatedResponse[T]":
         """
         Create a paginated response.
@@ -57,5 +55,5 @@ class PaginatedResponse(BaseModel, Generic[T]):
             page=page,
             total_pages=total_pages,
             has_next=has_next,
-            has_prev=has_prev
+            has_prev=has_prev,
         )

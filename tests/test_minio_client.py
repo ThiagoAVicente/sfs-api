@@ -11,7 +11,9 @@ def minio_container():
     container.with_exposed_ports(9000)
     container.with_env("MINIO_ROOT_USER", "minioadmin")
     container.with_env("MINIO_ROOT_PASSWORD", "minioadmin")
-    container.with_env("MINIO_KMS_SECRET_KEY", "minio-kms:1B09jU7vbNS4qTPpnfaddRPtfStSS2tjnPWvMvDq/xc=")
+    container.with_env(
+        "MINIO_KMS_SECRET_KEY", "minio-kms:1B09jU7vbNS4qTPpnfaddRPtfStSS2tjnPWvMvDq/xc="
+    )
     container.with_command("server /data")
 
     container.start()
@@ -82,9 +84,7 @@ class TestMinIOClientIntegration:
         # Upload
         data = b"test file content"
         success = MinIOClient.put_object(
-            object_name="test-file.txt",
-            data=data,
-            content_type="text/plain"
+            object_name="test-file.txt", data=data, content_type="text/plain"
         )
         assert success is True
 
@@ -99,10 +99,7 @@ class TestMinIOClientIntegration:
         MinIOClient.ensure_bucket_exists()
 
         # Upload file
-        MinIOClient.put_object(
-            object_name="exists.txt",
-            data=b"content"
-        )
+        MinIOClient.put_object(object_name="exists.txt", data=b"content")
 
         # Check exists
         assert MinIOClient.object_exists("exists.txt") is True
@@ -115,10 +112,7 @@ class TestMinIOClientIntegration:
         MinIOClient.ensure_bucket_exists()
 
         # Upload
-        MinIOClient.put_object(
-            object_name="to-delete.txt",
-            data=b"delete me"
-        )
+        MinIOClient.put_object(object_name="to-delete.txt", data=b"delete me")
 
         # Verify exists
         assert MinIOClient.object_exists("to-delete.txt") is True
@@ -139,8 +133,7 @@ class TestMinIOClientIntegration:
         # Upload multiple files
         for i in range(3):
             MinIOClient.put_object(
-                object_name=f"file{i}.txt",
-                data=f"content {i}".encode()
+                object_name=f"file{i}.txt", data=f"content {i}".encode()
             )
 
         # List all
@@ -172,10 +165,7 @@ class TestMinIOClientIntegration:
 
         # Create 1MB file
         large_data = b"x" * (1024 * 1024)
-        success = MinIOClient.put_object(
-            object_name="large-file.bin",
-            data=large_data
-        )
+        success = MinIOClient.put_object(object_name="large-file.bin", data=large_data)
         assert success is True
 
         # Verify

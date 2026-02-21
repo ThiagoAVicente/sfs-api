@@ -7,7 +7,11 @@ import re
 from .utils import clear_all_cache
 
 logger = logging.getLogger(__name__)
-async def index_file(ctx,collection:str , file_path:str, file_type:str, *args, **kwargs) -> dict:
+
+
+async def index_file(
+    ctx, collection: str, file_path: str, file_type: str, *args, **kwargs
+) -> dict:
     """
     Index a file
     Args:
@@ -33,26 +37,24 @@ async def index_file(ctx,collection:str , file_path:str, file_type:str, *args, *
         logger.info(f"Created {len(chunks)} chunks")
 
         # generate embeddings
-        chunk_texts = [c['text'] for c in chunks]
+        chunk_texts = [c["text"] for c in chunks]
         embeddings = await EmbeddingGenerator.embed_async(chunk_texts)
 
         await QdrantClient.ensure_collection_exists(collection_name=collection)
-        
+
         # store in qdrant
-        for i, (chunk,embedding) in enumerate(zip(chunks, embeddings)):
+        for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
 
             metadata = {
                 "file_path": file_path,
-                "text": chunk['text'],
-                "start": chunk['start'],
-                "end": chunk['end'],
+                "text": chunk["text"],
+                "start": chunk["start"],
+                "end": chunk["end"],
                 "chunk_index": i,
             }
 
             await QdrantClient.write(
-                collection_name=collection,
-                vector=embedding,
-                metadata=metadata
+                collection_name=collection, vector=embedding, metadata=metadata
             )
 
         logger.info(f"Indexed {len(chunks)} chunks")

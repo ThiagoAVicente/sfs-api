@@ -2,9 +2,9 @@ from unittest import TestCase
 import numpy as np
 from src.embeddings import EmbeddingGenerator, get_model
 
+
 def setup_module():
     get_model()
-
 
 
 class TestEmbeddings(TestCase):
