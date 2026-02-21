@@ -87,6 +87,15 @@ class QdrantClient:
         return True
 
     @classmethod
+    async def get_collections(cls) -> list[str]:
+        client = await cls.get()
+        collections = await client.get_collections()
+        
+        existing_names = [c.name for c in collections.collections]
+
+        return existing_names
+    
+    @classmethod
     async def write(
         cls,
         vector: np.ndarray,

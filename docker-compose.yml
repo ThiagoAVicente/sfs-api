@@ -86,7 +86,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
     container_name: sfs-api
     restart: always
     environment:
@@ -113,6 +113,8 @@ services:
       - RATE_LIMIT_DOWNLOAD=${RATE_LIMIT_DOWNLOAD}
       - MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB}
       - DISABLE_DOCS=${DISABLE_DOCS}
+      - QUERY_PAGE_SIZE=${QUERY_PAGE_SIZE}
+      - FILES_PAGE_SIZE=${FILES_PAGE_SIZE}
     depends_on:
       - qdrant
       - redis
@@ -129,7 +131,7 @@ services:
   worker:
     build:
       context: .
-      dockerfile: Dockerfile.worker
+      dockerfile: docker/Dockerfile.worker
     #container_name: sfs-worker
     restart: always
     environment:

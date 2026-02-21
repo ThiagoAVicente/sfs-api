@@ -36,7 +36,7 @@ class RedisClient:
     async def close(cls):
         """Close Redis pool."""
         if cls._pool is not None:
-            await cls._pool.close()
+            await cls._pool.aclose()
             cls._pool = None
             logger.info("Redis connection closed")
 
@@ -59,9 +59,12 @@ class RedisClient:
             The job ID
         """
         pool = await cls.get()
-        job = await pool.enqueue_job(job_request.function,
-                                    file_path=job_request.file_path,
-                                    file_type=job_request.file_type)
+        job = await pool.enqueue_job(
+            job_request.function,
+            collection=job_request.collection,
+            file_path=job_request.file_path,
+            file_type=job_request.file_type,
+        )
         if job is None:
             raise ValueError(f"Failed to enqueue job for '{job_request.file_path}'")
 
@@ -80,8 +83,5 @@ class RedisClient:
             Job status or None
         """
         pool = await cls.get()
-        job = Job(
-            job_id=job_id,
-            redis=pool
-        )
+        job = Job(job_id=job_id, redis=pool)
         return await job.status()
