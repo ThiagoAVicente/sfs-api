@@ -21,7 +21,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         generate_release_notes: true
-        name: "Release ${{ github.ref_name }}"
+        name: "${{ github.ref_name }}"
         body: |
           ## 🎉 SFS-API ${{ github.ref_name }}
           
