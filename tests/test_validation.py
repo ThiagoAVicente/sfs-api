@@ -2,7 +2,8 @@
 
 import pytest
 from fastapi import HTTPException
-from src.utils.validation import validate_collection_name
+
+from src.utils.validation import validate_collection_name, validate_filename
 
 
 class TestCollectionNameValidation:
@@ -61,6 +62,7 @@ class TestCollectionNameValidation:
             "col&name",  # ampersand
             "col*name",  # asterisk
             "col(name)",  # parentheses
+            "col.name",  # dot (not allowed in collections)
         ]
         for name in invalid_names:
             with pytest.raises(HTTPException):
@@ -76,3 +78,47 @@ class TestCollectionNameValidation:
         """Test that 64 characters is allowed."""
         max_length_name = "a" * 64
         assert validate_collection_name(max_length_name) == max_length_name
+
+
+class TestFilenameValidation:
+    """Tests for filename validation."""
+
+    def test_valid_filenames(self):
+        """Test valid filenames."""
+        assert validate_filename("test.txt") == "test.txt"
+        assert validate_filename("my-file_v2.pdf") == "my-file_v2.pdf"
+        assert validate_filename("document.tar.gz") == "document.tar.gz"
+
+    def test_reject_empty(self):
+        """Test rejection of empty filename."""
+        with pytest.raises(HTTPException) as exc_info:
+            validate_filename("")
+        assert exc_info.value.status_code == 400
+
+    def test_reject_path_traversal(self):
+        """Test rejection of path traversal in filenames."""
+        with pytest.raises(HTTPException):
+            validate_filename("../secret.txt")
+
+        with pytest.raises(HTTPException):
+            validate_filename("dir/file.txt")
+
+        with pytest.raises(HTTPException):
+            validate_filename("dir\\file.txt")
+
+    def test_reject_dot_patterns(self):
+        """Test rejection of . and .. as filenames."""
+        with pytest.raises(HTTPException):
+            validate_filename(".")
+
+        with pytest.raises(HTTPException):
+            validate_filename("..")
+
+    def test_max_length(self):
+        """Test filename length limits."""
+        long_name = "a" * 256
+        with pytest.raises(HTTPException):
+            validate_filename(long_name)
+
+        max_name = "a" * 255
+        assert validate_filename(max_name) == max_name
