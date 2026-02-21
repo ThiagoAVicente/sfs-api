@@ -1,5 +1,12 @@
 # Semantic File Search API (sfs-api)
 
+[![Tests](https://github.com/ThiagoAVicente/sfs-api/workflows/Tests/badge.svg)](https://github.com/ThiagoAVicente/sfs-api/actions/workflows/test.yml)
+[![Security](https://github.com/ThiagoAVicente/sfs-api/workflows/Security/badge.svg)](https://github.com/ThiagoAVicente/sfs-api/actions/workflows/security.yml)
+[![Python](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green.svg)](https://fastapi.tiangolo.com)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 A local semantic search engine that finds files based on meaning, not just keywords.
 
 ---
@@ -35,10 +42,14 @@ Search your files using natural language. Instead of exact keyword matching, thi
 
 ## Features
 
-- Upload and index text files
-- Semantic search using sentence transformers
-- Asynchronous processing with background workers
-- Rate limiting on endpoints
+- **Multi-collection support** - Organize files into separate collections (V2 API)
+- **Pagination** - Efficient browsing of large result sets
+- **Semantic search** - Find files by meaning using sentence transformers
+- **Asynchronous processing** - Background workers handle indexing
+- **Path traversal protection** - Input validation on all user data
+- **Rate limiting** - Configurable limits on all endpoints
+- **HTTPS support** - Local TLS with self-signed certificates via Caddy
+- **Caching** - Redis-backed caching for fast repeated queries
 
 ## Tech Stack
 
